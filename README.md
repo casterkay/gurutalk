@@ -37,8 +37,7 @@
 @Elon  ❯ 这很垃圾。你违反了工程学的第二步：Delete the part or process。
         如果你添加回被删除代码的频率低于 10%，说明你删得还不够狠。你需要回到物理学视角，抛弃那些“为了未来扩展”的虚假假设。[1]
 
-[1] 💡 引用来源: "Step 2: Delete the part or process. If you're not adding things back 10% of the time, you're clearly not deleting enough."
-📖 出处: The Book of Elon, Chapter 2 (Engineering & Design)
+- [1]: [*The Book of Elon, Chapter 2*: "Delete the part or process. If you're not adding things back 10% of the time, you're clearly not deleting enough."](https://bibliotalk.space/q/k1p8xq)
 ```
 
 ---
@@ -56,9 +55,9 @@
 2. **配置 Bibliotalk API Key**
    在你的终端环境中添加环境变量（测试期间请在平台免费领取）：
    ```bash
-   export BIBLIOTALK_API_KEY="sk-xxxxxx"
+   export BIBLIOTALK_API_KEY="xxxxxx"
    ```
 3. **在对话中直接召唤**
    ```
-   /ask-elon 我的新产品 MVP 应该先关注什么方向？
+   /elon 我的新产品 MVP 应该先关注什么方向？
    ```
