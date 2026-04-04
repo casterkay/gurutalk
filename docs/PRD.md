@@ -1,6 +1,6 @@
-# 大师.skill (Masters-skill) —— 客户端产品需求文档 v2.2
+# 大师.skill (Masters-skill) —— 客户端产品需求文档 v2.3
 
-> 版本说明：本版本明确 **Bibliotalk 负责数字人格 profile 的建立、维护、版本发布、检索与引用服务，但不生成回复、不调用 LLM**。客户端/用户个人 Agent 负责调用 LLM 生成回答，并插入引用标记与短链。
+> 版本说明：本版本对齐 `bibliotalk/PRD.md`（后端 v1.2）。明确 **Bibliotalk 负责数字人格 profile 的建立、维护、版本发布、检索与引用服务，但不生成回复、不调用 LLM**。同时明确引用短链 `q/{quote_id}` 为 **30 天临时引用**，并提供稳定公开分享页 `pub/{share_id}`（永久快照）。客户端/用户个人 Agent 负责调用 LLM 生成回答，并插入引用标记与短链。
 
 ---
 
@@ -42,7 +42,8 @@ MVP 仅覆盖：
 - 官方维护的公有语料库。
 - 人物 profile 拉取与本地落盘。
 - 基于 profile + 检索结果的个人 Agent 回答流程。
-- 引用短链生成与点击查看。
+- 引用短链生成与点击查看（`/q/{quote_id}`）。
+- 稳定公开分享页（`/pub/{share_id}`）。
 
 MVP 不覆盖：
 
@@ -95,7 +96,8 @@ MVP 不覆盖：
 9. Bibliotalk 在该人物的官方公有语料库中检索相关片段，返回结果列表与引用 ID。
 10. 客户端将引用 ID 拼接为短链 `https://bibliotalk.space/q/{quote_id}`。
 11. 用户个人 Agent 基于本地 profile 与检索结果调用 LLM 生成最终回答，并在回答中插入引用标记与短链。
-12. 用户点击短链时，打开 Bibliotalk 的引用卡片页；程序也可调用 `GET /v1/quote/{quote_id}` 获取引用原始数据。
+12. 用户点击短链时，打开 Bibliotalk 的引用卡片页 `/q/{quote_id}`；程序也可调用 `GET /v1/quote/{quote_id}` 获取引用原始数据。
+13. 用户可在 `/q/{quote_id}` 页面点击“分享”，生成稳定公开分享页 `/pub/{share_id}`（即使临时引用过期，分享页仍可访问）。
 
 ### 3.3 查询时序原则
 
@@ -187,6 +189,8 @@ API base URL：`https://api.bibliotalk.space`
 
 短链 base URL：`https://bibliotalk.space/q/:quote_id`
 
+公开分享 base URL：`https://bibliotalk.space/pub/:share_id`
+
 ### 5.1 鉴权
 
 - 使用 Better Auth + OIDC/OAuth。
@@ -247,7 +251,7 @@ API base URL：`https://api.bibliotalk.space`
 {
   "figure": "elon-musk",
   "query": "first-principles thinking",
-  "top_k": 5
+  "limit": 5
 }
 ```
 
@@ -261,14 +265,20 @@ API base URL：`https://api.bibliotalk.space`
   "query": "first-principles thinking",
   "results": [
     {
-         "quote_id": "abc123",
-         "content": "Boil things down to the fundamental truths...",
+      "kind": "chunk",
+      "quote_id": "abc123",
+      "content": "Boil things down to the fundamental truths...",
       "source_title": "The Book of Elon",
       "source_type": "book",
       "source_url": null,
       "locator": "Chapter 2",
       "published_at": "2025-01-01",
       "score": 0.91
+    },
+    {
+      "kind": "memory",
+      "memory": "Elon 强调用第一性原理把问题拆到最基本事实，再从零推导。",
+      "score": 0.86
     }
   ]
 }
@@ -276,13 +286,9 @@ API base URL：`https://api.bibliotalk.space`
 
 字段说明：
 
-- `quote_id` 为引用短链主键。
+- `kind="chunk"`：可展示的原文片段，服务端会分配 `quote_id`，可用于 `/q/{quote_id}` 与后续分享。
+- `kind="memory"`：从语料中抽取/归纳的记忆条目，不分配 `quote_id`，仅用于补充 Agent 上下文，不作为“原文引用”。
 - `results` 仅返回检索结果与元数据，不返回任何生成答案。
-
-约束：
-
-- `quote_id` 为 5+ 个 Base64URL 字符：`[0-9a-zA-Z_-]{5,}`
-- `content` 字符数 <= 800（汉字按 2 个字符计）
 
 ### 5.5 引用详情
 
@@ -314,8 +320,9 @@ API base URL：`https://api.bibliotalk.space`
 
 ### 6.2 生命周期
 
-- 引用不设固定过期时间；引用由 Bibliotalk 侧的 LRU 缓存管理。
-- 当引用缓存被淘汰时，对应短链会变为不可用（返回“引用不存在”）。
+- `quote_id` 对应临时引用短链：`https://bibliotalk.space/q/{quote_id}`。
+- 服务端会将临时引用以 `q:{quote_id}` 写入 Cloudflare KV，并设置 **30 天 TTL**；过期后 `/q/{quote_id}` 会返回“引用不存在”。
+- 用户在 `/q/{quote_id}` 页面点击“分享”后，服务端会生成稳定公开分享链接：`https://bibliotalk.space/pub/{share_id}`，并将 **完整 quote snapshot** 写入 `pub:{share_id}`（不设置过期），用于保证临时引用过期后依然可访问。
 
 ### 6.3 客户端行为要求
 
@@ -365,6 +372,12 @@ API base URL：`https://api.bibliotalk.space`
 - 若 `POST /v1/query` 返回空结果，客户端应明确告知“当前未检索到足够相关材料”。
 - 用户个人 Agent 在这种情况下应避免输出看似有依据的强断言。
 
+### 8.4 引用不存在或已过期
+
+- 若用户点击 `https://bibliotalk.space/q/{quote_id}` 返回“引用不存在”，客户端应提示该引用可能已过期（30 天 TTL）或无效。
+- 建议的用户引导：优先将引用在引用页生成 `/pub/{share_id}`（稳定公开页）后再传播；或重新检索生成新的引用。
+- 若用户访问 `/pub/{share_id}` 返回不存在，客户端应提示该分享链接无效或已被移除，并建议重新从新的引用页生成分享链接。
+
 ---
 
 ## 9. MVP 验收标准
@@ -375,8 +388,9 @@ MVP 至少满足：
 2. 用户可通过 `/{slug}` 拉取人物 profile，并在本地生成 `masters/{slug}/profile.md`。
 3. 用户发问后，客户端可调用 `POST /v1/query` 获得检索结果。
 4. 用户个人 Agent 可基于 profile 与检索结果生成回答，并插入 Bibliotalk 短链。
-5. 用户点击短链后，若引用未被缓存淘汰，可看到对应引用卡片页。
-6. 当人物不存在、检索无结果、引用不存在或被淘汰时，客户端行为明确且不误导用户。
+5. 用户点击短链后，若引用未过期（30 天 TTL），可看到对应引用卡片页 `/q/{quote_id}`。
+6. 用户可在引用卡片页生成稳定分享链接 `/pub/{share_id}`，并可长期访问分享页内容。
+7. 当人物不存在、检索无结果、引用不存在或已过期、分享链接不存在时，客户端行为明确且不误导用户。
 
 ---
 
