@@ -31,14 +31,11 @@
 
 **当你在面临一段极为臃肿的架构代码时：**
 
-```
-你     ❯ @elon，帮我看一下这段重构代码，我觉得太复杂了。附代码。
+`❯ /elon 帮我看一下这段重构代码，我觉得太复杂了。（附代码）`
 
-@Elon  ❯ 这很垃圾。你违反了工程学的第二步：Delete the part or process。
-        如果你添加回被删除代码的频率低于 10%，说明你删得还不够狠。你需要回到物理学视角，抛弃那些“为了未来扩展”的虚假假设。[1]
+⦿ 这很垃圾。你违反了工程学的第二步：Delete the part or process。如果你添加回被删除代码的频率低于 10%，说明你删得还不够狠。你需要回到物理学视角，抛弃那些“为了未来扩展”的虚假假设。[1]
 
-- [1]: [*The Book of Elon, Chapter 2*: "Delete the part or process. If you're not adding things back 10% of the time, you're clearly not deleting enough."](https://bibliotalk.space/q/k1p8xq)
-```
+- [1]: [*The Book of Elon, Chapter 2*: "If you're not adding things back 10% of the time, you're clearly not deleting enough."](https://bibliotalk.space/q/k1p8xq)
 
 ---
 
