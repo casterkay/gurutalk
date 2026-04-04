@@ -19,7 +19,7 @@
 
 市面上有很多“角色扮演”机器人，我们的不同在于：**不凭借 LLM 通用语料胡编乱造**。
 
-所有大师的回复均由云端 **Bibliotalk 引擎**驱动，构建其专属的结构化认知网络。当大师给你建议时：
+所有大师的数字人格检索与引用均由云端 **Bibliotalk 引擎**驱动，构建其专属的结构化认知网络；最终回复由你的本地 Agent/LLM 基于这些结果生成。当大师给你建议时：
 1. **绝对忠于原味**：不仅语气到位，更是基于其核心认知（如 Musk 的第一性原理，Naval 的杠杆原理）。
 2. **强制引用（Citation）**：任何一句有价值的建议，系统都将提供`[引用标记]`，点击即可追溯到大师在哪本传记、哪期播客或哪条 Tweet 中说过。
 
@@ -52,10 +52,10 @@
    ```bash
    git clone https://github.com/titanwings/masters-skill ~/.openclaw/workspace/skills/masters-skill
    ```
-2. **配置 Bibliotalk API Key**
+2. **配置 Bibliotalk OAuth Access Token**
    在你的终端环境中添加环境变量（测试期间请在平台免费领取）：
    ```bash
-   export BIBLIOTALK_API_KEY="xxxxxx"
+   export BIBLIOTALK_API_TOKEN="xxxxxx"
    ```
 3. **在对话中直接召唤**
    ```
