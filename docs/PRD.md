@@ -281,7 +281,7 @@ API base URL：`https://api.bibliotalk.space`
 
 约束：
 
-- `quote_id` 为 5-8 个 Base64URL 字符：`[0-9a-zA-Z_-]{5,8}`
+- `quote_id` 为 5+ 个 Base64URL 字符：`[0-9a-zA-Z_-]{5,}`
 - `content` 字符数 <= 800（汉字按 2 个字符计）
 
 ### 5.5 引用详情
