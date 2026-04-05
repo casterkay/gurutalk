@@ -1,4 +1,4 @@
-# 大师.skill (Masters-skill) —— 客户端产品需求文档 v2.3
+# 大师云 (Gurutalk) —— 客户端产品需求文档 v2.3
 
 > 版本说明：本版本对齐 `bibliotalk/PRD.md`（后端 v1.2）。明确 **Bibliotalk 负责数字人格 profile 的建立、维护、版本发布、检索与引用服务，但不生成回复、不调用 LLM**。同时明确引用短链 `q/{quote_id}` 为 **30 天临时引用**，并提供稳定公开分享页 `pub/{share_id}`（永久快照）。客户端/用户个人 Agent 负责调用 LLM 生成回答，并插入引用标记与短链。
 
@@ -6,7 +6,7 @@
 
 ## 1. 产品概述
 
-**大师.skill (Masters-skill)** 是一款 AI Agent 插件/客户端形态的交互入口。用户通过统一命令 `/{slug}` 进入某位“大师”的对话界面；客户端从云端 **Bibliotalk API** 拉取该人物的数字人格 profile 与检索结果；最终回答由用户个人 Agent 自主调用 LLM 生成。
+**大师云 (Gurutalk)** 是一款 AI Agent 插件/客户端形态的交互入口。用户通过统一命令 `/{slug}` 进入某位“大师”的对话界面；客户端从云端 **Bibliotalk API** 拉取该人物的数字人格 profile 与检索结果；最终回答由用户个人 Agent 自主调用 LLM 生成。
 
 首版产品目标不是做一个“云端代答助手”，而是做一个**可检索、可引用、可组合到个人 Agent 中的数字人格基础设施客户端**。
 
@@ -121,12 +121,12 @@ Bibliotalk 需要为每个人物建立 `Persona Profile`。该 profile 的作用
 
 1. `Identity`
    核心身份简介，包括人物是谁、所处时代、主要领域与代表性标签。
-2. `Principles`
+2. `Mental Models`
    核心观点、思维方式、方法论、判断标准等。
-3. `Styles`
+3. `Expression Styles`
    语言风格，包括语气、句式、表达习惯、修辞方式等。
-4. `Behaviors`
-   个人偏好、如何做出决策、如何提出批评、如何应对挑战等行为模式。
+4. `Personality`
+   性格特质与个人偏好，例如：内向/外向、感知/直觉、思考/情感、判断/知觉、果断/犹豫、直率/迂回、深度思考/快速思考等。
 5. `Timeline`
    重要事件和观点的时间线，用于记述不同时期的立场和语境的演变。
 6. `Adjustments`
@@ -142,9 +142,9 @@ Bibliotalk 需要为每个人物建立 `Persona Profile`。该 profile 的作用
 - `profile_version`
 - `profile`
 
-其中 `profile` 为结构化对象，仅包含前五层（`Identity`/`Principles`/`Styles`/`Behaviors`/`Timeline`），不包含 `Adjustments`。
+其中 `profile` 为结构化对象，仅包含前五层（`Identity`/`Mental Models`/`Expression Styles`/`Personality`/`Timeline`），不包含 `Adjustments`。
 
-`profile` 对象建议字段：`identity` / `principles` / `styles` / `behaviors` / `timeline`。
+`profile` 对象建议字段：`identity` / `mental_models` / `expr_styles` / `personality` / `timeline`。
 
 ### 4.4 Profile 本地落盘要求
 
@@ -165,13 +165,13 @@ Bibliotalk 需要为每个人物建立 `Persona Profile`。该 profile 的作用
 ## Identity
 ...
 
-## Principles
+## Mental Models
 ...
 
-## Styles
+## Expression Styles
 ...
 
-## Behaviors
+## Personality
 ...
 
 ## Timeline
@@ -225,13 +225,13 @@ API base URL：`https://api.bibliotalk.space`
 {
   "slug": "elon-musk",
   "display_name": "Elon Musk",
-  "greeting": "Ask me from first principles.",
+  "greeting": "Ask me from first mental_models.",
   "profile_version": "2026-04-04.1",
    "profile": {
       "identity": "...",
-      "principles": "...",
-      "styles": "...",
-      "behaviors": "...",
+      "mental_models": "...",
+      "expr_styles": "...",
+      "personality": "...",
       "timeline": "..."
    }
 }

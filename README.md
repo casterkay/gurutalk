@@ -1,6 +1,6 @@
 <div align="center">
 
-# 大师.skill (Masters-skill)
+# 大师云 (Gurutalk)
 
 > *"如果能随时让 Elon Musk 为你做 Code Review，让 Charlie Munger 为你的商业决策做「反向思考」排雷，世界会怎样？"*
 
@@ -47,7 +47,7 @@
 
 1. **Clone 到你的技能目录**
    ```bash
-   git clone https://github.com/titanwings/masters-skill ~/.openclaw/workspace/skills/masters-skill
+   git clone https://github.com/titanwings/Gurutalk ~/.openclaw/workspace/skills/Gurutalk
    ```
 2. **配置 Bibliotalk OAuth Access Token**
    在你的终端环境中添加环境变量（测试期间请在平台免费领取）：

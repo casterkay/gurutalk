@@ -1,4 +1,4 @@
-# AGENTS.md — Masters-skill / Bibliotalk 开发规程（给 AI 编程智能体）
+# AGENTS.md — Gurutalk / Bibliotalk 开发规程（给 AI 编程智能体）
 
 本文件用于约束与指导在本仓库内工作的 AI 编程智能体（以及人类协作者），确保交付物一致、可验证、可迭代、可回滚。
 
