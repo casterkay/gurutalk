@@ -14,7 +14,7 @@
 
 1. 以统一命令 `/{slug}` 启动某位人物的对话。
 2. 调用 Bibliotalk 获取该人物的 profile、欢迎语与版本信息。
-3. 将人物 profile 持久化到本地：`masters/{slug}/profile.md`，保证本地可追溯、可复用、可版本化。
+3. 将人物 profile 持久化到本地：`gurus/{slug}/profile.md`，保证本地可追溯、可复用、可版本化。
 4. 将用户问题发送给 Bibliotalk 检索接口，获取可引用的片段结果与引用 ID。
 5. 将引用 ID 映射为可点击短链：`https://bibliotalk.space/q/{quote_id}`。
 6. 将 profile 与检索结果一并提供给用户个人 Agent，由其自主生成最终回答。
@@ -80,17 +80,17 @@ MVP 不覆盖：
 
 ### 3.1 统一命令
 
-- 查看人物目录：`/list-masters`
-- 进入人物对话：`/{slug}`，例如 `/elon-musk`
+- 查看人物目录：`/gurus`
+- 进入人物对话：`/{slug}`，例如 `/elon`
 
 ### 3.2 MVP 端到端流程
 
-1. 用户发送 `/list-masters`。
+1. 用户发送 `/gurus`。
 2. 客户端调用 Bibliotalk `GET /v1/figures` 获取人物目录。
 3. 用户输入 `/{slug}` 进入对话。
 4. 客户端调用 Bibliotalk `GET /v1/figure/{slug}`。
 5. Bibliotalk 返回该人物的 profile、greeting、profile_version。
-6. 客户端将 profile 写入本地：`masters/{slug}/profile.md`。
+6. 客户端将 profile 写入本地：`gurus/{slug}/profile.md`。
 7. 客户端向用户展示 greeting，作为开场白。
 8. 用户输入问题后，客户端或用户个人 Agent 调用 Bibliotalk `POST /v1/query`。
 9. Bibliotalk 在该人物的官方公有语料库中检索相关片段，返回结果列表与引用 ID。
@@ -148,7 +148,7 @@ Bibliotalk 需要为每个人物建立 `Persona Profile`。该 profile 的作用
 
 ### 4.4 Profile 本地落盘要求
 
-- 路径：`masters/{slug}/profile.md`
+- 路径：`gurus/{slug}/profile.md`
 - 客户端应保留最近一次成功同步的 `profile_version`
 - `profile_version` 使用“日期+序号”的字符串，例如 `2026-04-04.1`，客户端按字典序比较即可
 - 当服务端 `profile_version` 变化时，客户端应覆盖本地 profile 文件
@@ -202,7 +202,7 @@ API base URL：`https://api.bibliotalk.space`
 
 用途：
 
-- 获取当前可用人物列表，用于 `/list-masters`。
+- 获取当前可用人物列表，用于 `/gurus`。
 
 建议返回字段：
 
@@ -225,7 +225,7 @@ API base URL：`https://api.bibliotalk.space`
 {
   "slug": "elon-musk",
   "display_name": "Elon Musk",
-  "greeting": "Ask me from first mental_models.",
+  "greeting": "Ask me from first principles.",
   "profile_version": "2026-04-04.1",
    "profile": {
       "identity": "...",
@@ -335,7 +335,7 @@ API base URL：`https://api.bibliotalk.space`
 
 ### 7.1 本地数据结构
 
-- `masters/{slug}/profile.md`
+- `gurus/{slug}/profile.md`
 
 首版本地只要求持久化人物 profile，不要求持久化完整检索历史。
 需要将后端返回的 profile 与用户本地的 `Adjustments` 进行拼接组成 profile.md。
@@ -384,8 +384,8 @@ API base URL：`https://api.bibliotalk.space`
 
 MVP 至少满足：
 
-1. 用户可通过 `/list-masters` 获得可用人物目录。
-2. 用户可通过 `/{slug}` 拉取人物 profile，并在本地生成 `masters/{slug}/profile.md`。
+1. 用户可通过 `/gurus` 获得可用人物目录。
+2. 用户可通过 `/{slug}` 拉取人物 profile，并在本地生成 `gurus/{slug}/profile.md`。
 3. 用户发问后，客户端可调用 `POST /v1/query` 获得检索结果。
 4. 用户个人 Agent 可基于 profile 与检索结果生成回答，并插入 Bibliotalk 短链。
 5. 用户点击短链后，若引用未过期（30 天 TTL），可看到对应引用卡片页 `/q/{quote_id}`。
@@ -397,7 +397,7 @@ MVP 至少满足：
 ## 10. 配置与启动
 
 - 环境变量：`BIBLIOTALK_API_TOKEN`
-- 客户端启动后应支持 `/list-masters` 与 `/{slug}` 两类入口命令
+- 客户端启动后应支持 `/gurus` 与 `/{slug}` 两类入口命令
 
 ---
 

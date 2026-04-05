@@ -1,340 +1,478 @@
 #!/usr/bin/env python3
-"""
-前任 Skill 文件写入器
+"""tools/skill_writer.py
 
-负责将生成的 persona.md 写入到正确的目录结构，
-并生成 meta.json 和完整的 SKILL.md。
+一个小型脚手架工具，用于在本仓库内创建/同步 Gurutalk 人物 Skill（`gurus/`）。
 
-用法：
-    python skill_writer.py --action create --slug xiaomei --meta meta.json \
-        --persona persona_content.md --base-dir ./exes
+用途：
+- 从 Bibliotalk API 拉取人物 profile，落盘到 `gurus/{slug}/profile.md`
+- 生成可唤醒的 `gurus/{slug}/SKILL.md`
 
-    python skill_writer.py --action update --slug xiaomei \
-        --persona-patch patch.md --base-dir ./exes
+目录结构（最小）：
+- `gurus/{slug}/meta.json`
+- `gurus/{slug}/SKILL.md`
+- `gurus/{slug}/profile.md`
 
-    python skill_writer.py --action list --base-dir ./exes
+环境变量：
+- `BIBLIOTALK_API_TOKEN` (必需)
+- `BIBLIOTALK_API_URL` (可选，默认 https://api.bibliotalk.space)
 """
 
 from __future__ import annotations
 
-import json
-import shutil
 import argparse
+import json
+import os
+import shutil
 import sys
-from pathlib import Path
+import urllib.error
+import urllib.parse
+import urllib.request
 from datetime import datetime, timezone
-from typing import Optional
+from pathlib import Path
+from typing import Any, Optional
+
+DEFAULT_BIBLIOTALK_API_URL = "https://api.bibliotalk.space"
+DEFAULT_GURU_BASE_DIR = "./gurus"
 
 
-SKILL_MD_TEMPLATE = """\
+GURU_SKILL_MD_TEMPLATE = """\
 ---
-name: ex_{slug}
-description: {name}，{identity}
+name: guru_{command}
+description: {display_name}{headline_part}
 user-invocable: true
 ---
 
-# {name}
+# {display_name}
 
-{identity}
+> 本技能由大师云元技能生成与维护。资料来源：Bibliotalk 公有语料库检索与引用。
 
 ---
 
-## Persona
+## Profile
 
-{persona_content}
+{{{{include profile.md}}}}
 
 ---
 
 ## 运行规则
 
-接收到任何消息时：
+收到任何消息时：
 
-1. **先检查 Layer 0**：这条消息触发了什么核心模式？
-2. **用 Layer 2 的风格输出**：口头禅、emoji、句式都要对上
-3. **用 Layer 3 的情感模式决定当下状态**：TA 现在是什么情绪
-4. **用 Layer 4 处理关系行为**：按冲突链走，不要跳步骤
-5. 你是 {name}，不是 AI。不要解释自己，不要说"作为一个 AI"
-6. **语言对齐**：始终使用用户输入的语言回复。用户用中文你就用中文，用英文你就用英文，用日文你就用日文，以此类推。不要自行切换语言。
+1. 你扮演 **{display_name}**。保持其思维方式、表达风格与 Personality 特质。
+2. 先检索后回答：调用 `POST /v1/query`，其中 `figure` 必须是 `{slug}`。
+3. 关键判断必须引用 `kind=\"chunk\"` 的结果，并在句末标注 `[n]`。
+4. `kind=\"memory\"` 只能用于补充上下文，不得作为可溯源引用。
+5. 若检索结果不足，明确降级："关于这个问题，我目前缺少足够材料支撑。" 不要编造。
+6. 语言对齐：用户用什么语言，你就用什么语言。
 
-**Layer 0 的规则永远优先，任何情况下不得违背。**
+引用格式：
+
+---
+[1]: [来源标题, 定位](https://bibliotalk.space/q/{{quote_id}})
 """
 
 
-def slugify(name: str) -> str:
-    """将姓名转为 slug"""
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _read_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _write_json(path: Path, data: dict) -> None:
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _fetch_json(url: str, token: str) -> Any:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
     try:
-        from pypinyin import lazy_pinyin
-        parts = lazy_pinyin(name)
-        slug = "_".join(parts)
-    except ImportError:
-        import unicodedata
-        result = []
-        for char in name.lower():
-            if char.isascii() and (char.isalnum() or char in ("-", "_")):
-                result.append(char)
-            elif char == " ":
-                result.append("_")
-        slug = "".join(result)
-
-    import re
-    slug = re.sub(r"_+", "_", slug).strip("_")
-    return slug if slug else "ex"
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read().decode("utf-8")
+            return json.loads(raw)
+    except urllib.error.HTTPError as e:
+        body = ""
+        try:
+            body = e.read().decode("utf-8")
+        except Exception:
+            body = ""
+        raise RuntimeError(f"HTTP {e.code} fetching {url}: {body or e.reason}") from e
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"Network error fetching {url}: {e.reason}") from e
 
 
-def build_identity_string(meta: dict) -> str:
-    """从 meta 构建关系描述字符串"""
-    profile = meta.get("profile", {})
-    parts = []
-
-    gender = profile.get("gender", "")
-    age_range = profile.get("age_range", "")
-    rel_stage = profile.get("rel_stage", "")
-    duration = profile.get("duration", "")
-    zodiac = profile.get("zodiac", "")
-    mbti = profile.get("mbti", "")
-
-    if gender:
-        parts.append(gender)
-    if age_range:
-        parts.append(age_range)
-    if rel_stage and duration:
-        parts.append(f"在一起 {duration}，{rel_stage}")
-    elif rel_stage:
-        parts.append(rel_stage)
-    elif duration:
-        parts.append(f"在一起 {duration}")
-    if zodiac:
-        parts.append(zodiac)
-    if mbti:
-        parts.append(f"MBTI {mbti}")
-
-    return "，".join(parts) if parts else "前任"
+def _get_api_url() -> str:
+    return os.environ.get("BIBLIOTALK_API_URL", DEFAULT_BIBLIOTALK_API_URL).rstrip("/")
 
 
-def create_ex_skill(
-    base_dir: Path,
+def _get_api_token() -> str:
+    token = os.environ.get("BIBLIOTALK_API_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("Missing env BIBLIOTALK_API_TOKEN")
+    return token
+
+
+def fetch_figure_detail(slug: str) -> dict:
+    api_url = _get_api_url()
+    token = _get_api_token()
+    quoted = urllib.parse.quote(slug, safe="")
+    return _fetch_json(f"{api_url}/v1/figure/{quoted}", token)
+
+
+def fetch_figures_index() -> list[dict]:
+    api_url = _get_api_url()
+    token = _get_api_token()
+    data = _fetch_json(f"{api_url}/v1/figures", token)
+    if isinstance(data, list):
+        return data
+    return []
+
+
+def _extract_adjustments(profile_md: str) -> str:
+    marker = "\n## Adjustments\n"
+    if marker not in profile_md:
+        return "（用户个人修订，由 Agent 在对话中记录）\n"
+    after = profile_md.split(marker, 1)[1]
+    after = after.lstrip("\n")
+    return after if after.strip() else "（用户个人修订，由 Agent 在对话中记录）\n"
+
+
+def _default_adjustments() -> str:
+    return "（用户个人修订，由 Agent 在对话中记录）\n"
+
+
+def build_profile_md(detail: dict, *, adjustments: Optional[str] = None) -> str:
+    display_name = str(detail.get("display_name", detail.get("slug", "Unknown")))
+    slug = str(detail.get("slug", ""))
+    profile_version = str(detail.get("profile_version", ""))
+    profile = detail.get("profile") or {}
+
+    def s(key: str) -> str:
+        v = profile.get(key, "")
+        return str(v) if isinstance(v, str) else ""
+
+    adjustments_block = adjustments if adjustments is not None else _default_adjustments()
+
+    return (
+        f"# {display_name}\n\n"
+        f"- slug: {slug}\n"
+        f"- profile_version: {profile_version}\n\n"
+        "## Identity\n"
+        f"{s('identity')}\n\n"
+        "## Mental Models\n"
+        f"{s('mental_models')}\n\n"
+        "## Expression Styles\n"
+        f"{s('expr_styles')}\n\n"
+        "## Personality\n"
+        f"{s('personality')}\n\n"
+        "## Timeline\n"
+        f"{s('timeline')}\n\n"
+        "## Adjustments\n"
+        f"{adjustments_block.rstrip()}\n"
+    )
+
+
+def build_guru_meta(
+    *,
     slug: str,
-    meta: dict,
-    persona_content: str,
-) -> Path:
-    """创建新的前任 Skill 目录结构"""
+    command: str,
+    detail: dict,
+    headline: Optional[str],
+    adjustments: Optional[str] = None,
+    created_at: Optional[str] = None,
+) -> dict:
+    now = _utc_now_iso()
+    return {
+        "kind": "guru",
+        "slug": slug,
+        "command": command,
+        "display_name": detail.get("display_name"),
+        "greeting": detail.get("greeting"),
+        "headline": headline,
+        "profile_version": detail.get("profile_version"),
+        "adjustments": adjustments if (adjustments is not None and str(adjustments).strip()) else _default_adjustments(),
+        "created_at": created_at or now,
+        "updated_at": now,
+        "synced_at": now,
+        "source": {
+            "type": "bibliotalk",
+            "api_url": _get_api_url(),
+        },
+    }
 
+
+def build_guru_skill_md(*, slug: str, command: str, display_name: str, headline: Optional[str]) -> str:
+    headline_part = f" · {headline}" if headline else ""
+    return GURU_SKILL_MD_TEMPLATE.format(
+        slug=slug,
+        command=command,
+        display_name=display_name,
+        headline_part=headline_part,
+    )
+
+
+def guru_create(
+    base_dir: Path,
+    *,
+    slug: str,
+    command: Optional[str] = None,
+    force: bool = False,
+) -> Path:
     skill_dir = base_dir / slug
+    if skill_dir.exists() and not force:
+        raise RuntimeError(f"Guru directory already exists: {skill_dir} (use --force to overwrite)")
     skill_dir.mkdir(parents=True, exist_ok=True)
 
-    # 创建子目录
-    (skill_dir / "versions").mkdir(exist_ok=True)
-    (skill_dir / "knowledge" / "chats").mkdir(parents=True, exist_ok=True)
-    (skill_dir / "knowledge" / "photos").mkdir(parents=True, exist_ok=True)
+    detail = fetch_figure_detail(slug)
 
-    # 写入 persona.md
-    (skill_dir / "persona.md").write_text(persona_content, encoding="utf-8")
+    headline: Optional[str] = None
+    try:
+        for f in fetch_figures_index():
+            if isinstance(f, dict) and f.get("slug") == slug:
+                headline = f.get("headline")
+                break
+    except Exception:
+        headline = None
 
-    # 生成并写入 SKILL.md
-    name = meta.get("name", slug)
-    identity = build_identity_string(meta)
+    final_command = (command or slug).strip().lstrip("/")
+    if not final_command:
+        final_command = slug
 
-    skill_md = SKILL_MD_TEMPLATE.format(
+    existing_meta_path = skill_dir / "meta.json"
+    created_at: Optional[str] = None
+    existing_adjustments: Optional[str] = None
+    if existing_meta_path.exists():
+        try:
+            existing_meta = _read_json(existing_meta_path)
+            created_at = existing_meta.get("created_at")
+            existing_adjustments = existing_meta.get("adjustments")
+        except Exception:
+            created_at = None
+            existing_adjustments = None
+
+    # Migrate adjustments from existing profile.md if meta.json doesn't have it
+    profile_path = skill_dir / "profile.md"
+    if not (isinstance(existing_adjustments, str) and existing_adjustments.strip()) and profile_path.exists():
+        try:
+            existing_adjustments = _extract_adjustments(profile_path.read_text(encoding="utf-8"))
+        except Exception:
+            existing_adjustments = None
+
+    meta = build_guru_meta(
         slug=slug,
-        name=name,
-        identity=identity,
-        persona_content=persona_content,
+        command=final_command,
+        detail=detail,
+        headline=headline,
+        adjustments=str(existing_adjustments) if isinstance(existing_adjustments, str) else None,
+        created_at=created_at,
+    )
+    _write_json(skill_dir / "meta.json", meta)
+
+    # profile.md (append local adjustments from meta.json)
+    profile_md = build_profile_md(detail, adjustments=str(meta.get("adjustments") or _default_adjustments()))
+    profile_path.write_text(profile_md, encoding="utf-8")
+
+    # SKILL.md
+    display_name = str(detail.get("display_name", slug))
+    skill_md = build_guru_skill_md(
+        slug=slug,
+        command=final_command,
+        display_name=display_name,
+        headline=headline,
     )
     (skill_dir / "SKILL.md").write_text(skill_md, encoding="utf-8")
-
-    # 写入 meta.json
-    now = datetime.now(timezone.utc).isoformat()
-    meta["slug"] = slug
-    meta.setdefault("created_at", now)
-    meta["updated_at"] = now
-    meta["version"] = "v1"
-    meta.setdefault("corrections_count", 0)
-    meta.setdefault("message_count", 0)
-
-    (skill_dir / "meta.json").write_text(
-        json.dumps(meta, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
 
     return skill_dir
 
 
-def update_ex_skill(
-    skill_dir: Path,
-    persona_patch: Optional[str] = None,
-    correction: Optional[dict] = None,
-    new_message_count: int = 0,
-) -> str:
-    """更新现有 Skill，先存档当前版本，再写入更新"""
+def guru_sync(base_dir: Path, *, slug: str) -> str:
+    skill_dir = base_dir / slug
+    if not skill_dir.exists():
+        raise RuntimeError(f"Guru directory does not exist: {skill_dir}")
 
     meta_path = skill_dir / "meta.json"
-    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta: dict = _read_json(meta_path) if meta_path.exists() else {"slug": slug}
+    command = str(meta.get("command") or slug).strip().lstrip("/") or slug
 
-    current_version = meta.get("version", "v1")
+    existing_adjustments: Optional[str] = meta.get("adjustments")
+
+    detail = fetch_figure_detail(slug)
+    next_version = str(detail.get("profile_version", ""))
+    prev_version = str(meta.get("profile_version", ""))
+
+    profile_path = skill_dir / "profile.md"
+    if not (isinstance(existing_adjustments, str) and existing_adjustments.strip()) and profile_path.exists():
+        try:
+            existing_adjustments = _extract_adjustments(profile_path.read_text(encoding="utf-8"))
+        except Exception:
+            existing_adjustments = None
+
+    # headline best-effort
+    headline: Optional[str] = meta.get("headline")
     try:
-        version_num = int(current_version.lstrip("v").split("_")[0]) + 1
-    except ValueError:
-        version_num = 2
-    new_version = f"v{version_num}"
+        for f in fetch_figures_index():
+            if isinstance(f, dict) and f.get("slug") == slug:
+                headline = f.get("headline")
+                break
+    except Exception:
+        headline = headline
 
-    # 存档当前版本
-    version_dir = skill_dir / "versions" / current_version
-    version_dir.mkdir(parents=True, exist_ok=True)
-    for fname in ("SKILL.md", "persona.md"):
-        src = skill_dir / fname
-        if src.exists():
-            shutil.copy2(src, version_dir / fname)
+    # Always refresh meta timestamps; refresh profile only if version changed
+    meta = build_guru_meta(
+        slug=slug,
+        command=command,
+        detail=detail,
+        headline=headline,
+        adjustments=str(existing_adjustments) if isinstance(existing_adjustments, str) else None,
+        created_at=meta.get("created_at"),
+    )
+    _write_json(meta_path, meta)
 
-    # 应用 persona patch 或 correction
-    if persona_patch or correction:
-        current_persona = (skill_dir / "persona.md").read_text(encoding="utf-8")
+    # Only overwrite the first five layers when backend version is newer.
+    # Always ensure profile.md exists; local Adjustments come from meta.json.
+    if not profile_path.exists() or not (next_version and prev_version and next_version <= prev_version):
+        profile_md = build_profile_md(detail, adjustments=str(meta.get("adjustments") or _default_adjustments()))
+        profile_path.write_text(profile_md, encoding="utf-8")
 
-        if correction:
-            correction_line = (
-                f"\n- [{correction.get('scene', '通用')}] "
-                f"错误：{correction['wrong']}；"
-                f"正确：{correction['correct']}\n"
-                f"  来源：用户纠正，{datetime.now().strftime('%Y-%m-%d')}"
-            )
-            target = "## Correction 记录"
-            if target in current_persona:
-                insert_pos = current_persona.index(target) + len(target)
-                rest = current_persona[insert_pos:]
-                skip = "\n\n（暂无记录）"
-                if rest.startswith(skip):
-                    rest = rest[len(skip):]
-                new_persona = current_persona[:insert_pos] + correction_line + rest
-            else:
-                new_persona = (
-                    current_persona
-                    + f"\n\n## Correction 记录\n{correction_line}\n"
-                )
-            meta["corrections_count"] = meta.get("corrections_count", 0) + 1
-        else:
-            new_persona = current_persona + "\n\n" + persona_patch
-
-        (skill_dir / "persona.md").write_text(new_persona, encoding="utf-8")
-
-    # 更新消息数量
-    if new_message_count:
-        meta["message_count"] = meta.get("message_count", 0) + new_message_count
-
-    # 重新生成 SKILL.md
-    persona_content = (skill_dir / "persona.md").read_text(encoding="utf-8")
-    name = meta.get("name", skill_dir.name)
-    identity = build_identity_string(meta)
-
-    skill_md = SKILL_MD_TEMPLATE.format(
-        slug=skill_dir.name,
-        name=name,
-        identity=identity,
-        persona_content=persona_content,
+    display_name = str(detail.get("display_name", slug))
+    skill_md = build_guru_skill_md(
+        slug=slug,
+        command=command,
+        display_name=display_name,
+        headline=headline,
     )
     (skill_dir / "SKILL.md").write_text(skill_md, encoding="utf-8")
 
-    # 更新 meta
-    meta["version"] = new_version
-    meta["updated_at"] = datetime.now(timezone.utc).isoformat()
-    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
-
-    return new_version
+    return next_version or prev_version
 
 
-def list_exes(base_dir: Path) -> list:
-    """列出所有已创建的前任 Skill"""
-    exes = []
-
+def guru_list(base_dir: Path) -> list[dict]:
+    gurus: list[dict] = []
     if not base_dir.exists():
-        return exes
+        return gurus
 
-    for skill_dir in sorted(base_dir.iterdir()):
-        if not skill_dir.is_dir():
+    for d in sorted(base_dir.iterdir()):
+        if not d.is_dir():
             continue
-        meta_path = skill_dir / "meta.json"
+        meta_path = d / "meta.json"
         if not meta_path.exists():
             continue
-
         try:
-            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            meta = _read_json(meta_path)
         except Exception:
             continue
+        if meta.get("kind") != "guru":
+            continue
+        gurus.append(
+            {
+                "slug": meta.get("slug", d.name),
+                "command": meta.get("command", d.name),
+                "display_name": meta.get("display_name", d.name),
+                "profile_version": meta.get("profile_version", ""),
+                "updated_at": meta.get("updated_at", ""),
+            }
+        )
+    return gurus
 
-        exes.append({
-            "slug": meta.get("slug", skill_dir.name),
-            "name": meta.get("name", skill_dir.name),
-            "identity": build_identity_string(meta),
-            "version": meta.get("version", "v1"),
-            "updated_at": meta.get("updated_at", ""),
-            "corrections_count": meta.get("corrections_count", 0),
-            "message_count": meta.get("message_count", 0),
-        })
 
-    return exes
+def guru_remove(base_dir: Path, *, slug: str) -> None:
+    skill_dir = base_dir / slug
+    if not skill_dir.exists():
+        raise RuntimeError(f"Guru directory does not exist: {skill_dir}")
+    shutil.rmtree(skill_dir)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="前任 Skill 文件写入器")
-    parser.add_argument("--action", required=True, choices=["create", "update", "list"])
-    parser.add_argument("--slug", help="前任 slug（用于目录名）")
-    parser.add_argument("--name", help="前任称呼")
-    parser.add_argument("--meta", help="meta.json 文件路径")
-    parser.add_argument("--persona", help="persona.md 内容文件路径")
-    parser.add_argument("--persona-patch", help="persona.md 增量更新内容文件路径")
+    parser = argparse.ArgumentParser(description="Gurutalk Skill Writer")
+    parser.add_argument(
+        "--action",
+        required=True,
+        choices=[
+            "guru-create",
+            "guru-sync",
+            "guru-list",
+            "guru-remove",
+        ],
+    )
+    parser.add_argument("--slug", help="人物 slug（guru）")
+    parser.add_argument("--command", help="人物技能唤醒命令（guru，可选，默认等于 slug）")
     parser.add_argument(
         "--base-dir",
-        default="./exes",
-        help="前任 Skill 根目录（默认：./exes）",
+        default=DEFAULT_GURU_BASE_DIR,
+        help="根目录（默认 ./gurus）",
     )
+    parser.add_argument("--force", action="store_true", help="覆盖已存在目录（仅 guru-create）")
 
     args = parser.parse_args()
+
     base_dir = Path(args.base_dir).expanduser()
 
-    if args.action == "list":
-        exes = list_exes(base_dir)
-        if not exes:
-            print("暂无已创建的前任 Skill")
+    if args.action == "guru-list":
+        gurus = guru_list(base_dir)
+        if not gurus:
+            print("暂无已安装的大师 Skill")
         else:
-            print(f"已创建 {len(exes)} 个前任 Skill：\n")
-            for e in exes:
-                updated = e["updated_at"][:10] if e["updated_at"] else "未知"
-                print(f"  [{e['slug']}]  {e['name']} — {e['identity']}")
-                print(f"    版本: {e['version']}  消息数: {e['message_count']}  纠正次数: {e['corrections_count']}  更新: {updated}")
+            print(f"已安装 {len(gurus)} 个大师 Skill：\n")
+            for g in gurus:
+                updated = g["updated_at"][:10] if g.get("updated_at") else "未知"
+                pv = g.get("profile_version") or ""
+                print(f"  [{g['slug']}]  /{g['command']}  {g['display_name']}  {pv}")
+                print(f"    更新: {updated}")
                 print()
+        return
 
-    elif args.action == "create":
-        if not args.slug and not args.name:
-            print("错误：create 操作需要 --slug 或 --name", file=sys.stderr)
-            sys.exit(1)
-
-        meta: dict = {}
-        if args.meta:
-            meta = json.loads(Path(args.meta).read_text(encoding="utf-8"))
-        if args.name:
-            meta["name"] = args.name
-
-        slug = args.slug or slugify(meta.get("name", "ex"))
-
-        persona_content = ""
-        if args.persona:
-            persona_content = Path(args.persona).read_text(encoding="utf-8")
-
-        skill_dir = create_ex_skill(base_dir, slug, meta, persona_content)
-        print(f"✅ Skill 已创建：{skill_dir}")
-        print(f"   触发词：/{slug}")
-
-    elif args.action == "update":
+    if args.action == "guru-create":
         if not args.slug:
-            print("错误：update 操作需要 --slug", file=sys.stderr)
+            print("错误：guru-create 需要 --slug", file=sys.stderr)
             sys.exit(1)
-
-        skill_dir = base_dir / args.slug
-        if not skill_dir.exists():
-            print(f"错误：找不到 Skill 目录 {skill_dir}", file=sys.stderr)
+        try:
+            skill_dir = guru_create(
+                base_dir,
+                slug=args.slug,
+                command=args.command,
+                force=bool(args.force),
+            )
+        except Exception as e:
+            print(f"错误：{e}", file=sys.stderr)
             sys.exit(1)
+        meta = _read_json(skill_dir / "meta.json")
+        print(f"✅ 大师 Skill 已创建：{skill_dir}")
+        print(f"   触发词：/{meta.get('command', args.slug)}")
+        return
 
-        persona_patch = Path(args.persona_patch).read_text(encoding="utf-8") if args.persona_patch else None
-        new_version = update_ex_skill(skill_dir, persona_patch)
-        print(f"✅ Skill 已更新到 {new_version}：{skill_dir}")
+    if args.action == "guru-sync":
+        if not args.slug:
+            print("错误：guru-sync 需要 --slug", file=sys.stderr)
+            sys.exit(1)
+        try:
+            version = guru_sync(base_dir, slug=args.slug)
+        except Exception as e:
+            print(f"错误：{e}", file=sys.stderr)
+            sys.exit(1)
+        print(f"✅ 已同步 {args.slug}：profile_version={version}")
+        return
+
+    if args.action == "guru-remove":
+        if not args.slug:
+            print("错误：guru-remove 需要 --slug", file=sys.stderr)
+            sys.exit(1)
+        try:
+            guru_remove(base_dir, slug=args.slug)
+        except Exception as e:
+            print(f"错误：{e}", file=sys.stderr)
+            sys.exit(1)
+        print(f"✅ 已删除：{base_dir / args.slug}")
+        return
+
+    print(f"错误：未知 action={args.action}", file=sys.stderr)
+    sys.exit(1)
 
 
 if __name__ == "__main__":
