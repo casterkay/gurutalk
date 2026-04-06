@@ -1,4 +1,6 @@
 .history
 .wrangler
+.tmp
 *.pyc
 gurus/.env
+bibliotalk/
