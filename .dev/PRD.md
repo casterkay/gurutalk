@@ -288,6 +288,7 @@ API base URL：`https://api.bibliotalk.space`
 
 - `kind="chunk"`：可展示的原文片段，服务端会分配 `quote_id`，可用于 `/q/{quote_id}` 与后续分享。
 - `kind="memory"`：从语料中抽取/归纳的记忆条目，不分配 `quote_id`，仅用于补充 Agent 上下文，不作为“原文引用”。
+- `score`：服务端返回的相关度分数（已按来源权重加权并重排；权重本身不对外暴露）。
 - `results` 仅返回检索结果与元数据，不返回任何生成答案。
 
 ### 5.5 引用详情
