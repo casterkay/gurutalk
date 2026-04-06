@@ -188,7 +188,7 @@ def ensure_guru_api_env(base_dir: Path) -> dict[str, str]:
     ).strip()
     if not api_token:
         raise RuntimeError(
-            "Missing gurus/.env BIBLIOTALK_API_KEY. Provision a guru API key first, then write it to gurus/.env"
+            "Missing gurus/.env BIBLIOTALK_API_KEY. Visit https://bibliotalk.space/login, copy the key from /account/api-key, then write it to gurus/.env"
         )
 
     env_data["API_BASE_URL"] = api_url
