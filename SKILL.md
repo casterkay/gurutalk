@@ -38,7 +38,7 @@ triggers:
 
 ### `/gurus` — 查看云端可用大师目录
 
-1. 调用 `GET $BIBLIOTALK_API_URL/v1/figures`
+1. 调用 `GET $API_BASE_URL/v1/figures`
 2. 以列表形式展示人物 `slug`、`display_name`、`headline`、`profile_version`
 3. 若该人物已在本地安装（存在 `gurus/{slug}/meta.json`），在列表中标记“已安装”
 
@@ -125,7 +125,7 @@ python tools/version_manager.py --action rollback --slug {slug} --version {label
 
 环境变量：
 
-- `BIBLIOTALK_API_URL` — API 地址（默认 `https://api.bibliotalk.space`）
+- `API_BASE_URL` — API 地址（默认 `https://api.bibliotalk.space`）
 - `BIBLIOTALK_API_TOKEN` — OAuth Access Token
 
 ---

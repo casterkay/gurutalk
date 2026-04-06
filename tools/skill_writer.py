@@ -14,7 +14,7 @@
 
 环境变量：
 - `BIBLIOTALK_API_TOKEN` (必需)
-- `BIBLIOTALK_API_URL` (可选，默认 https://api.bibliotalk.space)
+- `API_BASE_URL` (可选，默认 https://api.bibliotalk.space)
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-DEFAULT_BIBLIOTALK_API_URL = "https://api.bibliotalk.space"
+DEFAULT_API_BASE_URL = "https://api.bibliotalk.space"
 DEFAULT_GURU_BASE_DIR = "./gurus"
 
 
@@ -109,7 +109,7 @@ def _fetch_json(url: str, token: str) -> Any:
 
 
 def _get_api_url() -> str:
-    return os.environ.get("BIBLIOTALK_API_URL", DEFAULT_BIBLIOTALK_API_URL).rstrip("/")
+    return os.environ.get("API_BASE_URL", DEFAULT_API_BASE_URL).rstrip("/")
 
 
 def _get_api_token() -> str:

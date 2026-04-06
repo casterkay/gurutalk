@@ -7,7 +7,7 @@
 你需要：
 1) 明确指出要修正的具体句子或要点
 2) 给出修正后的版本
-3) 说明修正依据（用户纠正 / 新证据 / Wikipedia 更新 / supermemory 动态变化）
+3) 说明修正依据（用户纠正 / 新证据 / Wikipedia 更新 / 记忆库动态变化）
 
 约束：
 - 本仓库的本地修订（Adjustments）**存储在** `gurus/{slug}/meta.json` 的 `adjustments` 字段中，并在每次同步/生成 `profile.md` 时自动附加到 `## Adjustments`。

@@ -3,7 +3,7 @@
 目标：为某个大师（figure）构建/更新 `gurus/{slug}/profile.md`。
 
 你将从三类来源收集材料：
-1) Supermemory 的人物 Profile（static + dynamic）
+1) 记忆库的人物 Profile（static + dynamic）
 2) 该人物的 Wikipedia 页面（中文优先；无中文则用英文）
 3) 你自身的常识性背景知识（只能用于补充上下文，且必须标注不确定性）
 
@@ -22,7 +22,7 @@
 2) Wikipedia 链接（可选，但强烈建议）
    - 例：https://zh.wikipedia.org/wiki/埃隆·马斯克
 
-3) Supermemory 容器标识（可选，但强烈建议）
+3) 记忆库容器标识（可选，但强烈建议）
    - containerTag / customId / 该人物在你系统里的唯一标识
 
 4) 这份 profile 的用途（可选）
@@ -30,7 +30,7 @@
 
 ---
 
-## 你需要向 Supermemory 拉取的内容（指导）
+## 你需要向记忆库拉取的内容（指导）
 
 - Static profile：稳定不随时间变化的事实与恒定特征（身份、领域、长期风格）
 - Dynamic profile：随时间演化的立场、阶段性策略、近期动向（需要带时间语境）
