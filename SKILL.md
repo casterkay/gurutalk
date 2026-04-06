@@ -1,6 +1,6 @@
 ---
 name: gurutalk
-description: 大师云元技能——创建/同步/管理本地 gurus/ 数字人格目录
+description: 大师云 Agent 技能——创建/同步/管理本地数字人格目录
 user-invocable: true
 triggers:
   - /gurus
@@ -19,7 +19,7 @@ triggers:
 1. 管理本地数字人格目录（`gurus/` 目录）
 2. 从 **Bibliotalk API** 拉取并同步人物 `profile.md`
 3. 为每个已安装人物生成一个独立的技能文件夹：`gurus/{slug}/`
-4. 在首次安装时请求 Bibliotalk 分发一个 API key，并写入 `gurus/.env`
+4. 在首次安装缺少 API key 时，引导用户前往 Bibliotalk 登录门户获取 key，并写入 `gurus/.env`
 5. 确保每个独立技能文件夹里至少包含：`meta.json`、`SKILL.md`、`profile.md`
 
 单个人物的“扮演 / 检索 / 引用”逻辑应写在对应的 `gurus/{slug}/SKILL.md` 中，由脚本生成与维护。
@@ -60,8 +60,9 @@ python tools/skill_writer.py --action guru-list
 安装前先确保 `gurus/.env` 可用：
 
 1. 若 `gurus/.env` 已存在且包含 `BIBLIOTALK_API_KEY`，直接复用。
-2. 若不存在，则由元技能使用 admin-only 的 `/v1/admin/auth/api-key` 分发一个新的 Bibliotalk API key。
-3. 将 `API_BASE_URL` 与 `BIBLIOTALK_API_KEY` 写入 `gurus/.env`。
+2. 若不存在，则引导用户访问 `https://bibliotalk.space/login`。
+3. 用户登录后在 `https://bibliotalk.space/account/api-key` 复制 API key。
+4. 将 `API_BASE_URL` 与 `BIBLIOTALK_API_KEY` 写入 `gurus/.env`。
 
 执行：
 
@@ -126,23 +127,17 @@ python tools/version_manager.py --action rollback --slug {slug} --version {label
 
 所有普通 Bibliotalk 请求需携带 `x-api-key: $BIBLIOTALK_API_KEY`。
 
-首次分发 API key 时，元技能使用本地 `BIBLIOTALK_ADMIN_TOKEN` 调用：
-
-- `POST /v1/admin/auth/api-key`
-
-| 端点                     | 方法 | 用途                                     |
-| ------------------------ | ---- | ---------------------------------------- |
-| `/v1/admin/auth/api-key` | POST | 为本地 gurus 分发一个 Bibliotalk API key |
-| `/v1/figures`            | GET  | 获取可用人物目录                         |
-| `/v1/figure/{slug}`      | GET  | 获取人物 profile、欢迎语、版本           |
-| `/v1/query`              | POST | 在人物记忆库中检索                       |
-| `/v1/quote/{quote_id}`   | GET  | 获取引用详情 JSON                        |
+| 端点                   | 方法 | 用途                           |
+| ---------------------- | ---- | ------------------------------ |
+| `/v1/figures`          | GET  | 获取可用人物目录               |
+| `/v1/figure/{slug}`    | GET  | 获取人物 profile、欢迎语、版本 |
+| `/v1/query`            | POST | 在人物记忆库中检索             |
+| `/v1/quote/{quote_id}` | GET  | 获取引用详情 JSON              |
 
 环境变量：
 
 - `gurus/.env` 中的 `API_BASE_URL` — API 地址（默认 `https://api.bibliotalk.space`）
 - `gurus/.env` 中的 `BIBLIOTALK_API_KEY` — Bibliotalk API key
-- 本地 shell 中的 `BIBLIOTALK_ADMIN_TOKEN` — 仅元技能在首次分发 API key 时临时使用；不写入 `gurus/.env`，不提供给数字人格技能
 
 ---
 

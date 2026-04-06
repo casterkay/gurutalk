@@ -193,8 +193,10 @@ API base URL：`https://api.bibliotalk.space`
 
 ### 5.1 鉴权
 
-- 使用 Better Auth + OIDC/OAuth。
-- 所有 Bibliotalk API 请求均通过 `Authorization: Bearer <ACCESS_TOKEN>` 鉴权。
+- 使用 Better Auth。
+- 终端用户可先在 `https://bibliotalk.space/login` 完成 GitHub / Google / Apple OAuth 登录。
+- 登录后在 `https://bibliotalk.space/account/api-key` 获取或轮换自己的长期 `BIBLIOTALK_API_KEY`。
+- 所有运行时 Bibliotalk API 请求均通过 `x-api-key: <BIBLIOTALK_API_KEY>` 鉴权。
 
 ### 5.2 获取人物目录
 

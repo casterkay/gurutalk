@@ -63,12 +63,13 @@
    ```bash
    git clone https://github.com/casterkay/gurutalk ~/.openclaw/workspace/skills/GuruTalk
    ```
-2. **配置 Bibliotalk OAuth Access Token**
-   在你的终端环境中添加环境变量（测试期间请在平台免费领取）：
+2. **领取 Bibliotalk API key**
+   访问 `https://bibliotalk.space/login` 登录，在 `https://bibliotalk.space/account/api-key` 复制你的长期 API key。
+3. **配置运行时环境变量**
    ```bash
    export BIBLIOTALK_API_KEY="xxxxxx"
    ```
-3. **在对话中直接召唤**
+4. **在对话中直接召唤**
    ```
    /elon 我的新产品 MVP 应该先关注什么方向？
    ```
