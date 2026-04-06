@@ -44,7 +44,7 @@ user-invocable: true
 执行：
 
 ```bash
-python tools/skill_writer.py --action guru-list
+python scripts/skill_writer.py --action guru-list
 ```
 
 输出本地 `gurus/` 下所有已安装人物（以 `meta.json` 为准）。
@@ -61,13 +61,13 @@ python tools/skill_writer.py --action guru-list
 执行：
 
 ```bash
-python tools/skill_writer.py --action guru-create --slug {slug}
+python scripts/skill_writer.py --action guru-create --slug {slug}
 ```
 
 可选：指定唤醒命令（默认等于 slug）：
 
 ```bash
-python tools/skill_writer.py --action guru-create --slug {slug} --command {command}
+python scripts/skill_writer.py --action guru-create --slug {slug} --command {command}
 ```
 
 安装后会生成：
@@ -82,7 +82,7 @@ python tools/skill_writer.py --action guru-create --slug {slug} --command {comma
 执行：
 
 ```bash
-python tools/skill_writer.py --action guru-sync --slug {slug}
+python scripts/skill_writer.py --action guru-sync --slug {slug}
 ```
 
 同步行为：
@@ -95,7 +95,7 @@ python tools/skill_writer.py --action guru-sync --slug {slug}
 执行：
 
 ```bash
-python tools/skill_writer.py --action guru-remove --slug {slug}
+python scripts/skill_writer.py --action guru-remove --slug {slug}
 ```
 
 ## 本地版本管理
@@ -104,13 +104,13 @@ python tools/skill_writer.py --action guru-remove --slug {slug}
 
 ```bash
 # 创建快照
-python tools/version_manager.py --action snapshot --slug {slug}
+python scripts/version_manager.py --action snapshot --slug {slug}
 
 # 列出快照
-python tools/version_manager.py --action list --slug {slug}
+python scripts/version_manager.py --action list --slug {slug}
 
 # 回滚到某个快照 label
-python tools/version_manager.py --action rollback --slug {slug} --version {label}
+python scripts/version_manager.py --action rollback --slug {slug} --version {label}
 ```
 
 ---

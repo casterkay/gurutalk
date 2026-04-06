@@ -21,4 +21,4 @@
 1) 变更点列表（旧 → 新），说明改的是哪一层
 2) 对 `gurus/{slug}/meta.json` 的补丁（只改 `adjustments` 字段）：
 	- 把纠正写成可追溯的条目（建议包含日期与依据来源）
-3) （可选）若需要重建文件：说明应执行 `python tools/skill_writer.py --action guru-sync --slug {slug}` 以重新生成 `profile.md`
+3) （可选）若需要重建文件：说明应执行 `python scripts/skill_writer.py --action guru-sync --slug {slug}` 以重新生成 `profile.md`

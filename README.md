@@ -61,7 +61,7 @@
 
 1. **Clone 到你的技能目录**
    ```bash
-   git clone https://github.com/casterkay/gurutalk ~/.openclaw/workspace/skills/GuruTalk
+   git clone https://github.com/casterkay/gurutalk ~/.openclaw/workspace/skills/gurutalk
    ```
 2. **领取 Bibliotalk API key**
    访问 `https://bibliotalk.space/login` 登录，在 `https://bibliotalk.space/account/api-key` 复制你的长期 API key。

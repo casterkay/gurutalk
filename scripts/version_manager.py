@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tools/version_manager.py
+"""scripts/version_manager.py
 
 GuruTalk 版本管理器（guru profiles）
 
@@ -11,10 +11,10 @@ GuruTalk 版本管理器（guru profiles）
 - gurus/{slug}/versions/{label}/
 
 用法：
-  python tools/version_manager.py --action snapshot --slug elon
-  python tools/version_manager.py --action list --slug elon
-  python tools/version_manager.py --action rollback --slug elon --version 2026-04-04.1__20260405T101010Z
-  python tools/version_manager.py --action cleanup --slug elon --keep 20
+  python scripts/version_manager.py --action snapshot --slug elon
+  python scripts/version_manager.py --action list --slug elon
+  python scripts/version_manager.py --action rollback --slug elon --version 2026-04-04.1__20260405T101010Z
+  python scripts/version_manager.py --action cleanup --slug elon --keep 20
 """
 
 from __future__ import annotations

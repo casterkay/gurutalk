@@ -1004,7 +1004,7 @@ ${result.searchResults?.results.map(m => m.memory).join('\n') || 'None'}
 
 <Accordion title="AI SDK Integration">
   ```typescript  theme={null}
-  import { withSupermemory } from "@supermemory/tools/ai-sdk"
+  import { withSupermemory } from "@supermemory/scripts/ai-sdk"
   import { openai } from "@ai-sdk/openai"
 
   // Profiles automatically injected
