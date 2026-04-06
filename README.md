@@ -66,7 +66,7 @@
 2. **配置 Bibliotalk OAuth Access Token**
    在你的终端环境中添加环境变量（测试期间请在平台免费领取）：
    ```bash
-   export BIBLIOTALK_API_TOKEN="xxxxxx"
+   export BIBLIOTALK_API_KEY="xxxxxx"
    ```
 3. **在对话中直接召唤**
    ```

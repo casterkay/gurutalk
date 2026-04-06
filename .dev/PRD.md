@@ -397,7 +397,7 @@ MVP 至少满足：
 
 ## 10. 配置与启动
 
-- 环境变量：`BIBLIOTALK_API_TOKEN`
+- 环境变量：`BIBLIOTALK_API_KEY`
 - 客户端启动后应支持 `/gurus` 与 `/{slug}` 两类入口命令
 
 ---
