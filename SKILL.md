@@ -2,12 +2,6 @@
 name: gurutalk
 description: 大师云 Agent 技能——创建/同步/管理本地数字人格目录
 user-invocable: true
-triggers:
-  - /gurus
-  - /local-gurus
-  - /install-guru
-  - /sync-guru
-  - /remove-guru
 ---
 
 # 大师云 (GuruTalk)
@@ -36,16 +30,16 @@ triggers:
 
 ---
 
-## 命令
+## 能力列表
 
-### `/gurus` — 查看云端可用大师目录
+### 查看云端可用大师目录
 
 1. 从 `gurus/.env` 读取 `API_BASE_URL` 与 `BIBLIOTALK_API_KEY`
 2. 调用 `GET $API_BASE_URL/v1/figures`，使用请求头 `x-api-key: $BIBLIOTALK_API_KEY`
 3. 以列表形式展示人物 `slug`、`display_name`、`headline`、`profile_version`
 4. 若该人物已在本地安装（存在 `gurus/{slug}/meta.json`），在列表中标记“已安装”
 
-### `/local-gurus` — 查看本地已安装的人格目录
+### 查看本地已安装的人格目录
 
 执行：
 
@@ -55,7 +49,7 @@ python tools/skill_writer.py --action guru-list
 
 输出本地 `gurus/` 下所有已安装人物（以 `meta.json` 为准）。
 
-### `/install-guru {slug} [as {command}]` — 安装一个大师技能到本地
+### 安装一个大师技能到本地
 
 安装前先确保 `gurus/.env` 可用：
 
@@ -83,7 +77,7 @@ python tools/skill_writer.py --action guru-create --slug {slug} --command {comma
 - `gurus/{slug}/SKILL.md`（该人物的独立扮演技能）
 - `gurus/{slug}/meta.json`（目录元数据）
 
-### `/sync-guru {slug}` — 同步某个大师的最新 profile
+### 同步某个大师的最新 profile
 
 执行：
 
@@ -96,7 +90,7 @@ python tools/skill_writer.py --action guru-sync --slug {slug}
 - 从 `/v1/figure/{slug}` 拉取 `profile` 与 `profile_version`
 - 若版本更新则覆盖前五层，保留 `## Adjustments`
 
-### `/remove-guru {slug}` — 删除本地某个大师目录
+### 删除本地某个大师目录
 
 执行：
 
@@ -104,9 +98,7 @@ python tools/skill_writer.py --action guru-sync --slug {slug}
 python tools/skill_writer.py --action guru-remove --slug {slug}
 ```
 
----
-
-## 本地版本管理（可选）
+## 本地版本管理
 
 用于在本地对某个大师目录做快照/回滚（快照包含：`meta.json`、`profile.md`、`SKILL.md`）。
 
@@ -128,10 +120,10 @@ python tools/version_manager.py --action rollback --slug {slug} --version {label
 所有普通 Bibliotalk 请求需携带 `x-api-key: $BIBLIOTALK_API_KEY`。
 
 | 端点                   | 方法 | 用途                           |
-| ---------------------- | ---- | ------------------------------ |
-| `/v1/figures`          | GET  | 获取可用人物目录               |
-| `/v1/figure/{slug}`    | GET  | 获取人物 profile、欢迎语、版本 |
-| `/v1/query`            | POST | 在人物记忆库中检索             |
+| ---------------------- | ---- | ---------------------------- |
+| `/v1/figures`          | GET  | 获取可用人物目录                |
+| `/v1/figure/{slug}`    | GET  | 获取人物 profile、欢迎语、版本   |
+| `/v1/query`            | POST | 在人物记忆库中检索              |
 | `/v1/quote/{quote_id}` | GET  | 获取引用详情 JSON              |
 
 环境变量：
