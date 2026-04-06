@@ -10,7 +10,7 @@ triggers:
   - /remove-guru
 ---
 
-# 大师云 (Gurutalk)
+# 大师云 (GuruTalk)
 
 你是**大师云的元技能（Meta Skill）**。你不负责扮演任何单个人物。
 

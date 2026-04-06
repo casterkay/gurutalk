@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tools/version_manager.py
 
-Gurutalk 版本管理器（guru profiles）
+GuruTalk 版本管理器（guru profiles）
 
 目的：
 - 为单个 guru 目录创建可回滚的本地快照（meta.json/profile.md/SKILL.md）
@@ -219,7 +219,7 @@ def _require_guru_dir(base_dir: Path, slug: str) -> Path:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Gurutalk version manager (gurus/{slug}/versions)")
+    parser = argparse.ArgumentParser(description="GuruTalk version manager (gurus/{slug}/versions)")
     parser.add_argument(
         "--action",
         required=True,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tools/skill_writer.py
 
-一个小型脚手架工具，用于在本仓库内创建/同步 Gurutalk 人物 Skill（`gurus/`）。
+一个小型脚手架工具，用于在本仓库内创建/同步 GuruTalk 人物 Skill（`gurus/`）。
 
 用途：
 - 从 Bibliotalk API 拉取人物 profile，落盘到 `gurus/{slug}/profile.md`
@@ -390,7 +390,7 @@ def guru_remove(base_dir: Path, *, slug: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Gurutalk Skill Writer")
+    parser = argparse.ArgumentParser(description="GuruTalk Skill Writer")
     parser.add_argument(
         "--action",
         required=True,
