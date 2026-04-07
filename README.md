@@ -60,8 +60,13 @@
 我们的架构已全面云 端化，现在安装极度轻巧（无需配置 Python 爬虫和复杂依赖）！
 
 1. **Clone 到你的技能目录**
+   OpenClaw:
    ```bash
    git clone https://github.com/casterkay/gurutalk ~/.openclaw/workspace/skills/gurutalk
+   ```
+   Claude Code:
+   ```bash
+   git clone https://github.com/casterkay/gurutalk ~/.claude/skills/gurutalk
    ```
 2. **直接开始调用元技能**
    ```
