@@ -103,7 +103,10 @@ def _request_json(
     data = None if body is None else json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
         url,
-        headers=headers,
+        headers={
+            **headers,
+            "User-Agent": "GuruTalk-SkillWriter/1.0 (+https://github.com/gurutalk)",
+        },
         data=data,
         method=method,
     )
@@ -144,9 +147,12 @@ def _apply_runtime_env(env_data: dict[str, str]) -> dict[str, str]:
 
 
 def ensure_guru_api_env(base_dir: Path) -> dict[str, str]:
+    env_file = base_dir / ".env"
+    env_data = _read_env_file(env_file)
 
     api_url = (
         os.environ.get("API_BASE_URL")
+        or env_data.get("API_BASE_URL")
         or DEFAULT_API_BASE_URL
     ).rstrip("/")
 
