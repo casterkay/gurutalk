@@ -31,7 +31,7 @@
 
 **当你在设计一个复杂的分布式系统架构时：**
 
-`❯ /elon 我在设计一个高并发 AI API 平台：前面是 API Gateway，后面有用户服务、计费服务、模型路由服务，还有 Kafka、Redis、向量数据库和多个微服务。你觉得这个架构合理吗？`
+`❯ /elon-musk 我在设计一个高并发 AI API 平台：前面是 API Gateway，后面有用户服务、计费服务、模型路由服务，还有 Kafka、Redis、向量数据库和多个微服务。你觉得这个架构合理吗？`
 
 ⦿ 你的问题不是“系统不够复杂”，而是**复杂得毫无必要**。大多数工程师在系统设计时犯的错误，是在验证需求之前就开始堆叠组件。
 
@@ -63,13 +63,17 @@
    ```bash
    git clone https://github.com/casterkay/gurutalk ~/.openclaw/workspace/skills/gurutalk
    ```
-2. **领取 Bibliotalk API key**
-   访问 `https://bibliotalk.space/login` 登录，在 `https://bibliotalk.space/account/api-key` 复制你的长期 API key。
-3. **配置运行时环境变量**
-   ```bash
-   export BIBLIOTALK_API_KEY="xxxxxx"
+2. **直接开始调用元技能**
    ```
-4. **在对话中直接召唤**
+   /skill gurutalk 有哪些上线的大师？
    ```
-   /elon 我的新产品 MVP 应该先关注什么方向？
+3. **首次调用时按提示完成初始化**
+   如果当前环境里还没有 `BIBLIOTALK_API_KEY`，Agent 会在对话里引导你完成登录和凭据写入。
+4. **招募大师到本地**
+   ```
+   /skill gurutalk 招募 Elon Musk
+   ```
+5. **向大师提问**
+   ```
+   /skill elon-musk 你觉得我的系统架构合理吗？（记得替换成你安装的大师名字）
    ```

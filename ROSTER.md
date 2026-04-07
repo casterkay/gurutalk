@@ -4,10 +4,10 @@
 - Charlie Munger
 - Paul Graham
 - Benjamin Franklin
-- Jiddu Krishnamurti
-- Alan Watts
 - Marcus Aurelius
 - Seneca
+- Jiddu Krishnamurti
+- Alan Watts
 - 孙子
 - 曾国藩
 - 毛泽东
