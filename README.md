@@ -8,7 +8,7 @@
 [![Powered By: Bibliotalk](https://img.shields.io/badge/API-Bibliotalk-blue.svg)](#)
 [![AgentSkills](https://img.shields.io/badge/AgentSkills-Standard-green)](https://agentskills.io)
 
-超越时空的智库！将历史上乃至当代最顶级的思想家、企业家的**真实语录、信件、播客**构建为高维度的“数字人格 API”。
+超越时空的智库！将历史上乃至当代最顶级的思想家、企业家、精神导师的**真实语录、信件、播客**构建为高维度的“数字人格 API”。
 无需繁琐的本地配置，只需唤醒你的 OpenClaw 或 Claude Code，随时向大师请教代码、商业或人生难题！
 
 </div>

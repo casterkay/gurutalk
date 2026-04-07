@@ -5,8 +5,11 @@
 - Paul Graham
 - Benjamin Franklin
 - Jiddu Krishnamurti
+- Alan Watts
 - Marcus Aurelius
-- 孔子
+- Seneca
 - 孙子
+- 曾国藩
 - 毛泽东
-- 
+- 南怀瑾
+- 倪海厦
