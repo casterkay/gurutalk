@@ -32,12 +32,21 @@ from pathlib import Path
 from typing import Any, Optional
 
 DEFAULT_API_BASE_URL = "https://api.bibliotalk.space"
-DEFAULT_GURU_BASE_DIR = "./gurus"
+
+# Agent skills directory mapping
+AGENT_SKILLS_DIRS = {
+    "claude": "~/.claude/skills",
+    "openclaw": "~/.openclaw/workspace/skills",
+}
+
+# Default base directory for gurus (will be resolved based on agent type)
+DEFAULT_AGENT = "claude"
+DEFAULT_GURU_BASE_DIR = None  # Will be set to AGENT_SKILLS_DIR[agent]/gurus
 
 
 GURU_SKILL_MD_TEMPLATE = """\
 ---
-name: guru_{command}
+name: {command}
 description: {display_name}{headline_part}
 user-invocable: true
 ---
@@ -79,6 +88,13 @@ user-invocable: true
 ---
 [1]: [来源标题, 定位](https://bibliotalk.space/q/{{quote_id}})
 """
+
+
+def _get_agent_skills_dir(agent: str) -> Path:
+    """Get the skills directory for the specified agent type."""
+    if agent not in AGENT_SKILLS_DIRS:
+        raise RuntimeError(f"Unknown agent type: {agent}. Supported: {list(AGENT_SKILLS_DIRS.keys())}")
+    return Path(AGENT_SKILLS_DIRS[agent]).expanduser()
 
 
 def _utc_now_iso() -> str:
@@ -485,15 +501,25 @@ def main() -> None:
     parser.add_argument("--slug", help="人物 slug（guru）")
     parser.add_argument("--command", help="人物技能唤醒命令（guru，可选，默认等于 slug）")
     parser.add_argument(
+        "--agent",
+        default=DEFAULT_AGENT,
+        choices=list(AGENT_SKILLS_DIRS.keys()),
+        help=f"Agent 类型（默认: {DEFAULT_AGENT}）",
+    )
+    parser.add_argument(
         "--base-dir",
-        default=DEFAULT_GURU_BASE_DIR,
-        help="根目录（默认 ./gurus）",
+        default=None,
+        help="根目录（默认: {agent_skills_dir}）",
     )
     parser.add_argument("--force", action="store_true", help="覆盖已存在目录（仅 guru-create）")
 
     args = parser.parse_args()
 
-    base_dir = Path(args.base_dir).expanduser()
+    # Resolve base_dir based on agent type
+    if args.base_dir:
+        base_dir = Path(args.base_dir).expanduser()
+    else:
+        base_dir = _get_agent_skills_dir(args.agent)
 
     if args.action == "guru-list":
         gurus = guru_list(base_dir)

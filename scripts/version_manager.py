@@ -8,13 +8,14 @@ GuruTalk 版本管理器（guru profiles）
 - 列出快照、回滚到某个快照、清理旧快照
 
 约定目录：
-- gurus/{slug}/versions/{label}/
+- ~/.claude/skills/{slug}/versions/{label}/ (Claude)
+- ~/.openclaw/workspace/skills/{slug}/versions/{label}/ (OpenClaw)
 
 用法：
-  python scripts/version_manager.py --action snapshot --slug elon
-  python scripts/version_manager.py --action list --slug elon
-  python scripts/version_manager.py --action rollback --slug elon --version 2026-04-04.1__20260405T101010Z
-  python scripts/version_manager.py --action cleanup --slug elon --keep 20
+  python scripts/version_manager.py --action snapshot --agent claude --slug elon-musk
+  python scripts/version_manager.py --action list --agent claude --slug elon-musk
+  python scripts/version_manager.py --action rollback --agent claude --slug elon-musk --version 2026-04-04.1__20260405T101010Z
+  python scripts/version_manager.py --action cleanup --agent claude --slug elon-musk --keep 20
 """
 
 from __future__ import annotations
@@ -28,7 +29,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-DEFAULT_GURU_BASE_DIR = "./gurus"
+# Agent skills directory mapping
+AGENT_SKILLS_DIRS = {
+    "claude": "~/.claude/skills",
+    "openclaw": "~/.openclaw/workspace/skills",
+}
+
+DEFAULT_AGENT = "claude"
+DEFAULT_GURU_BASE_DIR = None  # Will be set based on agent type
 DEFAULT_KEEP_VERSIONS = 20
 
 DEFAULT_FILES = ("meta.json", "profile.md", "SKILL.md")
@@ -218,18 +226,31 @@ def _require_guru_dir(base_dir: Path, slug: str) -> Path:
     return guru_dir
 
 
+def _get_agent_skills_dir(agent: str) -> Path:
+    """Get the skills directory for the specified agent type."""
+    if agent not in AGENT_SKILLS_DIRS:
+        raise RuntimeError(f"Unknown agent type: {agent}. Supported: {list(AGENT_SKILLS_DIRS.keys())}")
+    return Path(AGENT_SKILLS_DIRS[agent]).expanduser()
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="GuruTalk version manager (gurus/{slug}/versions)")
+    parser = argparse.ArgumentParser(description="GuruTalk version manager (skills/{slug}/versions)")
     parser.add_argument(
         "--action",
         required=True,
         choices=["snapshot", "list", "rollback", "cleanup"],
     )
-    parser.add_argument("--slug", required=True, help="人物 slug（对应 gurus/{slug}）")
+    parser.add_argument("--slug", required=True, help="人物 slug（对应 skills/{slug}）")
+    parser.add_argument(
+        "--agent",
+        default=DEFAULT_AGENT,
+        choices=list(AGENT_SKILLS_DIRS.keys()),
+        help=f"Agent 类型（默认: {DEFAULT_AGENT}）",
+    )
     parser.add_argument(
         "--base-dir",
-        default=DEFAULT_GURU_BASE_DIR,
-        help="根目录（默认 ./gurus）",
+        default=None,
+        help="根目录（默认: {agent_skills_dir}）",
     )
 
     parser.add_argument("--label", help="快照 label（仅 snapshot，可选）")
@@ -243,7 +264,11 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    base_dir = Path(args.base_dir)
+    # Resolve base_dir based on agent type
+    if args.base_dir:
+        base_dir = Path(args.base_dir).expanduser()
+    else:
+        base_dir = _get_agent_skills_dir(args.agent)
     try:
         guru_dir = _require_guru_dir(base_dir, args.slug)
     except Exception as e:

@@ -1,6 +1,10 @@
-# 大师云 (GuruTalk) —— 客户端产品需求文档 v2.3
+# 大师云 (GuruTalk) —— 客户端产品需求文档 v2.4
 
-> 版本说明：本版本对齐 `bibliotalk/PRD.md`（后端 v1.2）。明确 **Bibliotalk 负责数字人格 profile 的建立、维护、版本发布、检索与引用服务，但不生成回复、不调用 LLM**。同时明确引用短链 `q/{quote_id}` 为 **30 天临时引用**，并提供稳定公开分享页 `pub/{share_id}`（永久快照）。客户端/用户个人 Agent 负责调用 LLM 生成回答，并插入引用标记与短链。
+> 版本说明��本版本对齐 `bibliotalk/PRD.md`（后端 v1.2）。
+>
+> **核心架构**：**Bibliotalk 负责数字人格 profile 的建立、维护、版本发布、检索与引用服务，但不生成回复、不调用 LLM**。同时明确引用短链 `q/{quote_id}` 为 **30 天临时引用**，并提供稳定公开分享页 `pub/{share_id}`（永久快照）。客户端/用户个人 Agent 负责调用 LLM 生成回答，并插入引用标记与短链。
+>
+> **v2.4 更新**：重构技能安装架构，每个大师作为独立的 Agent Skill 直接安装在 Agent 的 skills 目录（`~/.claude/skills/{slug}/` 或 `~/.openclaw/workspace/skills/{slug}/`），而非中间的 `gurus/` 子目录。新增 `--agent` 参数支持多 Agent 环境。
 
 ---
 
@@ -14,7 +18,10 @@
 
 1. 以统一命令 `/{slug}` 启动某位人物的对话。
 2. 调用 Bibliotalk 获取该人物的 profile、欢迎语与版本信息。
-3. 将人物 profile 持久化到本地：`gurus/{slug}/profile.md`，保证本地可追溯、可复用、可版本化。
+3. 将人物 profile 持久化到本地：
+   - **Claude Code**: `~/.claude/skills/{slug}/profile.md`
+   - **OpenClaw**: `~/.openclaw/workspace/skills/{slug}/profile.md`
+   保证本地可追溯、可复用、可版本化。
 4. 将用户问题发送给 Bibliotalk 检索接口，获取可引用的片段结果与引用 ID。
 5. 将引用 ID 映射为可点击短链：`https://bibliotalk.space/q/{quote_id}`。
 6. 将 profile 与检索结果一并提供给用户个人 Agent，由其自主生成最终回答。
@@ -90,7 +97,9 @@ MVP 不覆盖：
 3. 用户输入 `/{slug}` 进入对话。
 4. 客户端调用 Bibliotalk `GET /v1/figure/{slug}`。
 5. Bibliotalk 返回该人物的 profile、greeting、profile_version。
-6. 客户端将 profile 写入本地：`gurus/{slug}/profile.md`。
+6. 客户端将 profile 写入本地：
+   - **Claude Code**: `~/.claude/skills/{slug}/profile.md`
+   - **OpenClaw**: `~/.openclaw/workspace/skills/{slug}/profile.md`
 7. 客户端向用户展示 greeting，作为开场白。
 8. 用户输入问题后，客户端或用户个人 Agent 调用 Bibliotalk `POST /v1/query`。
 9. Bibliotalk 在该人物的官方公有语料库中检索相关片段，返回结果列表与引用 ID。
@@ -148,10 +157,12 @@ Bibliotalk 需要为每个人物建立 `Persona Profile`。该 profile 的作用
 
 ### 4.4 Profile 本地落盘要求
 
-- 路径：`gurus/{slug}/profile.md`
+- 路径（根据 Agent 环境）：
+  - **Claude Code**: `~/.claude/skills/{slug}/profile.md`
+  - **OpenClaw**: `~/.openclaw/workspace/skills/{slug}/profile.md`
 - 客户端应保留最近一次成功同步的 `profile_version`
-- `profile_version` 使用“日期+序号”的字符串，例如 `2026-04-04.1`，客户端按字典序比较即可
-- 当服务端 `profile_version` 变化时，客户端应覆盖本地 profile 文件
+- `profile_version` 使用"日期+序号"的字符串，例如 `2026-04-04.1`，客户端按字典序���较即可
+- 当服务端 `profile_version` 变化时，客户端应覆盖本地 profile 文件前五层，保留本地 `Adjustments` 段
 - 本地 profile 文件应尽量保留结构化标题，便于用户查看与个人 Agent 直接复用
 
 建议的本地文件结构：
@@ -338,7 +349,15 @@ API base URL：`https://api.bibliotalk.space`
 
 ### 7.1 本地数据结构
 
-- `gurus/{slug}/profile.md`
+每个大师技能目录包含：
+
+- **Claude Code**: `~/.claude/skills/{slug}/`
+  - `SKILL.md` - 该人物的独立扮演技能定义
+  - `profile.md` - 人物画像（六层模型）
+  - `meta.json` - 技能元数据（版本、唤醒命令、同步时间等）
+
+- **OpenClaw**: `~/.openclaw/workspace/skills/{slug}/`
+  - 同上结构
 
 首版本地只要求持久化人物 profile，不要求持久化完整检索历史。
 需要将后端返回的 profile 与用户本地的 `Adjustments` 进行拼接组成 profile.md。
@@ -388,7 +407,9 @@ API base URL：`https://api.bibliotalk.space`
 MVP 至少满足：
 
 1. 用户可通过 `/gurus` 获得可用人物目录。
-2. 用户可通过 `/{slug}` 拉取人物 profile，并在本地生成 `gurus/{slug}/profile.md`。
+2. 用户可通过 `/{slug}` 拉取人物 profile，并在本地生成：
+   - **Claude Code**: `~/.claude/skills/{slug}/profile.md`
+   - **OpenClaw**: `~/.openclaw/workspace/skills/{slug}/profile.md`
 3. 用户发问后，客户端可调用 `POST /v1/query` 获得检索结果。
 4. 用户个人 Agent 可基于 profile 与检索结果生成回答，并插入 Bibliotalk 短链。
 5. 用户点击短链后，若引用未过期（30 天 TTL），可看到对应引用卡片页 `/q/{quote_id}`。
@@ -400,11 +421,85 @@ MVP 至少满足：
 ## 10. 配置与启动
 
 - 环境变量：`BIBLIOTALK_API_KEY`
+  - **Claude Code**: 配置在 `~/.claude/settings.json` 的 `env.BIBLIOTALK_API_KEY`
+  - **OpenClaw**: 配置在 `~/.openclaw/.env` 的 `BIBLIOTALK_API_KEY`
 - 客户端启动后应支持 `/gurus` 与 `/{slug}` 两类入口命令
+
+### 10.1 技能安装管理
+
+使用 GuruTalk 元技能提供的管理工具：
+
+```bash
+# 查看云端可用大师
+python gurutalk/scripts/skill_writer.py --action guru-list --agent claude
+
+# 安装大师技能
+python gurutalk/scripts/skill_writer.py --action guru-create --agent claude --slug elon-musk
+
+# 同步最新 profile
+python gurutalk/scripts/skill_writer.py --action guru-sync --agent claude --slug elon-musk
+
+# 创建快照
+python gurutalk/scripts/version_manager.py --action snapshot --agent claude --slug elon-musk
+
+# 回滚到指定快照
+python gurutalk/scripts/version_manager.py --action rollback --agent claude --slug elon-musk --version {label}
+```
+
+### 10.2 Agent 支持
+
+- **Claude Code** (`--agent claude`): 技能安装在 `~/.claude/skills/{slug}/`
+- **OpenClaw** (`--agent openclaw`): 技能安装在 `~/.openclaw/workspace/skills/{slug}/`
 
 ---
 
-## 11. MVP 之后备忘
+## 11. 技术实现细节
+
+### 11.1 GuruTalk 元技能
+
+GuruTalk 是一个**元技能（Meta Skill）**，负责：
+
+- 从 Bibliotalk API 拉取人物目录与 profile
+- 生成与安装大师技能到对应的 Agent skills 目录
+- 同步与版本管理（保留本地 Adjustments）
+- API Key 管理
+
+GuruTalk **不参与**任何人物的角色扮演。
+
+### 11.2 skill_writer.py 核心功能
+
+- `--agent` 参数支持 `claude` 和 `openclaw` 两种环境
+- `AGENT_SKILLS_DIRS` 常量定义不同 Agent 的路径映射
+- 自动解析对应的 skills 目录路径
+- 从 Bibliotalk API 拉取人物 profile 并生成 SKILL.md
+- 处理 User-Agent 以避免 Cloudflare 阻止
+- 支持增量同步，保留本地 Adjustments
+
+### 11.3 version_manager.py 核心功能
+
+- 为大师技能目录创建版本快照
+- 快照包含 `meta.json`、`profile.md`、`SKILL.md` 三个文件
+- 支持列出所有快照版本
+- 支持回滚到指定快照版本
+- 自动创建回滚前的备份
+
+### 11.4 技能唤醒方式
+
+安装后的大师技能可以通过以下方式唤醒：
+
+- **Claude Code**: 直接使用命令 `/elon-musk` 或在对话中 `@elon-musk`
+- **OpenClaw**: 使用命令 `/elon-musk` 或 `@elon-musk`
+
+技能内部会：
+
+1. 先调用 `POST /v1/query` 检索相关记忆片段
+2. 基于 profile 的六层模型保持人物一致性
+3. 为 `kind="chunk"` 的结果添加引用标记 `[n]`
+4. 生成带引用的回答，每条引用可点击查看 `https://bibliotalk.space/q/{quote_id}`
+
+---
+
+## 12. MVP 之后备忘
 
 以下内容不属于首版交付范围，但需要在后续版本考虑：
 
