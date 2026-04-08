@@ -10,14 +10,14 @@
 
 ## 1. 产品概述
 
-**大师云 (GuruTalk)** 是一款 AI Agent 插件/客户端形态的交互入口。用户通过统一命令 `/{slug}` 进入某位“大师”的对话界面；客户端从云端 **Bibliotalk API** 拉取该人物的数字人格 profile 与检索结果；最终回答由用户个人 Agent 自主调用 LLM 生成。
+**大师云 (GuruTalk)** 是一款 AI Agent 插件/客户端形态的交互入口。用户通过统一命令 `/{slug} {message}` 直接进入某位“大师”的对话界面；一旦会话开始，后续消息默认继续发送给当前人物，直到用户发送 `/gurutalk end`，或通过 `/{another-figure} {message}` 直接切换到另一位人物。客户端从云端 **Bibliotalk API** 拉取该人物的数字人格 profile 与检索结果；最终回答由用户个人 Agent 自主调用 LLM 生成。
 
 首版产品目标不是做一个“云端代答助手”，而是做一个**可检索、可引用、可组合到个人 Agent 中的数字人格基础设施客户端**。
 
 ### 1.1 客户端核心职责
 
-1. 以统一命令 `/{slug}` 启动某位人物的对话。
-2. 调用 Bibliotalk 获取该人物的 profile、欢迎语与版本信息。
+1. 以统一命令 `/{slug} {message}` 启动某位人物的对话，并将后续消息保持路由到该人物，直到 `/gurutalk end`，或通过 `/{another-figure} {message}` 直接切换。
+2. 调用 Bibliotalk 获取该人物的 profile 与版本信息。
 3. 将人物 profile 持久化到本地：
    - **Claude Code**: `~/.claude/skills/{slug}/profile.md`
    - **OpenClaw**: `~/.openclaw/workspace/skills/{slug}/profile.md`
@@ -88,25 +88,28 @@ MVP 不覆盖：
 ### 3.1 统一命令
 
 - 查看人物目录：`/gurus`
-- 进入人物对话：`/{slug}`，例如 `/elon-musk`
+- 进入人物对话：`/{slug} {message}`，例如 `/elon-musk 帮我审视这个系统设计`
+- 结束当前人物对话：`/gurutalk end`
+- 直接切换人物对话：`/{another-figure} {message}`
 
 ### 3.2 MVP 端到端流程
 
-1. 用户发送 `/gurus`。
-2. 客户端调用 Bibliotalk `GET /v1/figures` 获取人物目录。
-3. 用户输入 `/{slug}` 进入对话。
+1. 用户发送 `/gurutalk`。
+2. 客户端调用 Bibliotalk `GET /v1/figures` 获取线上大师目录。
+3. 用户输入 `/{slug} {message}` 进入对话。
 4. 客户端调用 Bibliotalk `GET /v1/figure/{slug}`。
-5. Bibliotalk 返回该人物的 profile、greeting、profile_version。
-6. 客户端将 profile 写入本地：
+5. Bibliotalk 返回该人物的 profile。
+6. 与本地 profile 版本（如存在）对照，如有更新，则将 profile 写入本地：
    - **Claude Code**: `~/.claude/skills/{slug}/profile.md`
    - **OpenClaw**: `~/.openclaw/workspace/skills/{slug}/profile.md`
-7. 客户端向用户展示 greeting，作为开场白。
-8. 用户输入问题后，客户端或用户个人 Agent 调用 Bibliotalk `POST /v1/query`。
-9. Bibliotalk 在该人物的官方公有语料库中检索相关片段，返回结果列表与引用 ID。
-10. 客户端将引用 ID 拼接为短链 `https://bibliotalk.space/q/{quote_id}`。
-11. 用户个人 Agent 基于本地 profile 与检索结果调用 LLM 生成最终回答，并在回答中插入引用标记与短链。
-12. 用户点击短链时，打开 Bibliotalk 的引用卡片页 `/q/{quote_id}`；程序也可调用 `GET /v1/quote/{quote_id}` 获取引用原始数据。
-13. 用户可在 `/q/{quote_id}` 页面点击“分享”，生成稳定公开分享页 `/pub/{share_id}`（即使临时引用过期，分享页仍可访问）。
+7. 根据用户发送的消息 ，Agent 调用 Bibliotalk `POST /v1/query`。
+8. Bibliotalk 在该人物的官方公有语料库中检索相关片段，返回结果列表与引用 ID。
+9. 客户端将引用 ID 拼接为短链 `https://bibliotalk.space/q/{quote_id}`。
+10. 用户个人 Agent 基于本地 profile 与检索结果调用 LLM 生成最终回答，并在回答中插入引用标记与短链。
+11. 用户点击短链时，打开 Bibliotalk 的引用卡片页 `/q/{quote_id}`；程序也可调用 `GET /v1/quote/{quote_id}` 获取引用原始数据。
+12. 用户可在 `/q/{quote_id}` 页面点击“分享”，生成稳定公开分享页 `/pub/{share_id}`（即使临时引用过期，分享页仍可访问）。
+
+进入某位人物后，用户后续消息默认继续发给该人物，直到显式发送 `/gurutalk end`，或通过另一个 `/{another-figure} {message}` 直接切换。
 
 ### 3.3 查询时序原则
 
@@ -147,7 +150,6 @@ Bibliotalk 需要为每个人物建立 `Persona Profile`。该 profile 的作用
 
 - `slug`
 - `display_name`
-- `greeting`
 - `profile_version`
 - `profile`
 
@@ -230,7 +232,7 @@ API base URL：`https://api.bibliotalk.space`
 
 用途：
 
-- 拉取人物 profile、欢迎语与版本信息。
+- 拉取人物 profile 与版本信息。
 
 建议响应结构：
 
@@ -238,7 +240,6 @@ API base URL：`https://api.bibliotalk.space`
 {
   "slug": "elon-musk",
   "display_name": "Elon Musk",
-  "greeting": "Ask me from first principles.",
   "profile_version": "2026-04-04.1",
    "profile": {
       "identity": "...",
@@ -373,7 +374,7 @@ API base URL：`https://api.bibliotalk.space`
 
 ### 7.3 同步规则
 
-- 首次进入 `/{slug}` 时必须拉取服务端 profile。
+- 首次通过 `/{slug} {message}` 进入某位人物对话时必须拉取服务端 profile。
 - 若本地已有 profile，仍应通过 `GET /v1/figure/{slug}` 检查版本是否更新。
 
 ---
@@ -407,7 +408,7 @@ API base URL：`https://api.bibliotalk.space`
 MVP 至少满足：
 
 1. 用户可通过 `/gurus` 获得可用人物目录。
-2. 用户可通过 `/{slug}` 拉取人物 profile，并在本地生成：
+2. 用户可通过 `/{slug} {message}` 拉取人物 profile，并在本地生成：
    - **Claude Code**: `~/.claude/skills/{slug}/profile.md`
    - **OpenClaw**: `~/.openclaw/workspace/skills/{slug}/profile.md`
 3. 用户发问后，客户端可调用 `POST /v1/query` 获得检索结果。
@@ -423,7 +424,7 @@ MVP 至少满足：
 - 环境变量：`BIBLIOTALK_API_KEY`
   - **Claude Code**: 配置在 `~/.claude/settings.json` 的 `env.BIBLIOTALK_API_KEY`
   - **OpenClaw**: 配置在 `~/.openclaw/.env` 的 `BIBLIOTALK_API_KEY`
-- 客户端启动后应支持 `/gurus` 与 `/{slug}` 两类入口命令
+- 客户端启动后应支持 `/gurus`、`/{slug} {message}`、`/{another-figure} {message}` 与 `/gurutalk end` 四类入口命令
 
 ### 10.1 技能安装管理
 
@@ -487,15 +488,18 @@ GuruTalk **不参与**任何人物的角色扮演。
 
 安装后的大师技能可以通过以下方式唤醒：
 
-- **Claude Code**: 直接使用命令 `/elon-musk` 或在对话中 `@elon-musk`
-- **OpenClaw**: 使用命令 `/elon-musk` 或 `@elon-musk`
+- **Claude Code**: 直接使用命令 `/elon-musk {message}`
+- **OpenClaw**: 使用命令 `/elon-musk {message}`
+
+一旦进入某位人物对话，后续消息默认继续发送给该人物，直到用户显式发送 `/gurutalk end`，或通过另一个 `/{another-figure} {message}` 直接切换。
 
 技能内部会：
 
 1. 先调用 `POST /v1/query` 检索相关记忆片段
 2. 基于 profile 的六层模型保持人物一致性
 3. 为 `kind="chunk"` 的结果添加引用标记 `[n]`
-4. 生成带引用的回答，每条引用可点击查看 `https://bibliotalk.space/q/{quote_id}`
+4. 生成带引用的回答，并且每条回复都必须以 `"{Display Name}" Agent:\n\n` 开头
+5. 每条引用可点击查看 `https://bibliotalk.space/q/{quote_id}`
 
 ---
 

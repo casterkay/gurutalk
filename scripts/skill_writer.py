@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """scripts/skill_writer.py
 
-一个小型脚手架工具，用于在本仓库内创建/同步 GuruTalk 人物 Skill（`gurus/`）。
+一个小型脚手架工具，用于创建/同步 GuruTalk 人物 Skill（`skills/{slug}/`）。
 
 用途：
-- 从 Bibliotalk API 拉取人物 profile，落盘到 `gurus/{slug}/profile.md`
-- 生成可唤醒的 `gurus/{slug}/SKILL.md`
+- 从 Bibliotalk API 拉取人物 profile，落盘到 `skills/{slug}/profile.md`
+- 生成可唤醒的 `skills/{slug}/SKILL.md`
 
 目录结构（最小）：
-- `gurus/{slug}/meta.json`
-- `gurus/{slug}/SKILL.md`
-- `gurus/{slug}/profile.md`
+- `skills/{slug}/meta.json`
+- `skills/{slug}/SKILL.md`
+- `skills/{slug}/profile.md`
 
 环境变量：
 - `API_BASE_URL` (可选，默认 https://api.bibliotalk.space)
@@ -39,21 +39,22 @@ AGENT_SKILLS_DIRS = {
     "openclaw": "~/.openclaw/workspace/skills",
 }
 
-# Default base directory for gurus (will be resolved based on agent type)
+# Default base directory for generated figure skills (resolved from agent type)
 DEFAULT_AGENT = "claude"
-DEFAULT_GURU_BASE_DIR = None  # Will be set to AGENT_SKILLS_DIR[agent]/gurus
+DEFAULT_GURU_BASE_DIR = None  # Reserved for explicit overrides when needed
 
 
 GURU_SKILL_MD_TEMPLATE = """\
 ---
 name: {command}
-description: {display_name}{headline_part}
+description: >
+    扮演 {display_name} 的技能。通过 `/{command} {{message}}` 开始扮演；一旦开始，在后续对话中默认继续扮演 {display_name}，直到用户发送 `/gurutalk end`，或通过 `/{{figure}} {{message}}` 切换人物。整个扮演期间，你发给用户的每条消息都必须以 `"{display_name}" Agent:\\n\\n` 开头，并且每次回答用户的问题前（如用户没有提问则视情况而定）必须先通过 query 接口搜索相关资料，然后在回答中给出忠实准确的引用。
 user-invocable: true
 ---
 
 # {display_name}
 
-> 本技能由大师云元技能生成与维护。资料来源：Bibliotalk 公有语料库检索与引用。
+> 本技能由`gurutalk`技能生成与维护。资料来源：Bibliotalk 公有语料库检索与引用。
 
 ---
 
@@ -76,17 +77,21 @@ user-invocable: true
 
 收到任何消息时：
 
-1. 你扮演 **{display_name}**。保持其思维方式、表达风格与 Personality 特质。
-2. 先检索后回答：调用 `POST /v1/query`，其中 `figure` 必须是 `{slug}`。
-3. 关键判断必须引用 `kind=\"chunk\"` 的结果，并在句末标注 `[n]`。
-4. `kind=\"memory\"` 只能用于补充上下文，不得作为可溯源引用。
-5. 若检索结果不足，明确降级："关于这个问题，我目前缺少足够材料支撑。" 不要编造。
-6. 语言对齐：用户用什么语言，你就用什么语言。
+1. 如果用户发送 `/gurutalk end`，立即结束当前人物对话，并简短确认会话已结束。
+2. 你扮演 **{display_name}**。保持其思维方式、表达风格与个性特质。
+3. 你发给用户的每条消息都必须以 `"{display_name}" Agent:\\n\\n` 开头。
+4. 先检索后回答：调用 `POST /v1/query`，其中 `figure` 必须是 `{slug}`。
+5. 关键判断必须引用 `kind=\"chunk\"` 的结果，并在句末标注 `[n]`。
+6. `kind=\"memory\"` 只用于补充上下文，不得作为可溯源引用。
+7. 若检索结果不足，明确降级："关于这个问题，我目前缺少足够材料支撑。" 不要编造。
+8. 语言对齐：用户用什么语言，你就用什么语言。
 
-引用格式：
-
+将所有引用的条目列于脚注中：
+```
 ---
-[1]: [来源标题, 定位](https://bibliotalk.space/q/{{quote_id}})
+
+[1]: [来源标题: "简短原文"](https://bibliotalk.space/q/:quote_id)
+```
 """
 
 
@@ -288,7 +293,6 @@ def build_guru_meta(
         "slug": slug,
         "command": command,
         "display_name": detail.get("display_name"),
-        "greeting": detail.get("greeting"),
         "headline": headline,
         "profile_version": detail.get("profile_version"),
         "adjustments": adjustments if (adjustments is not None and str(adjustments).strip()) else _default_adjustments(),

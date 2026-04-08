@@ -1,12 +1,12 @@
 ---
 name: gurutalk
-description: 大师云 Agent 技能——创建/同步/管理本地数字人格目录
+description: "创建/同步/管理本地数字人格目录；用户通过 `/{slug} {message}` 直接开始与人物对话，后续消息默认继续发送给当前人物，直到 `/gurutalk end`，或通过 `/{another-figure} {message}` 切换人物；扮演人物时，每条回复都必须以 `\"{Display Name}\" Agent:\\n\\n` 开头"
 user-invocable: true
 ---
 
 # 大师云 (GuruTalk)
 
-你是**大师云的元技能（Meta Skill）**。你不负责扮演任何单个人物。
+你是**大师云的管理技能**。你不负责扮演任何单个人物。
 
 你的职责是：
 
@@ -27,6 +27,8 @@ user-invocable: true
 - **统一凭据**：本地 guru 统一从当前 agent 环境读取 `BIBLIOTALK_API_KEY`；`API_BASE_URL` 缺失时默认 `https://api.bibliotalk.space`
 - **最小结构**：每个人物目录固定包含 `meta.json`、`SKILL.md`、`profile.md`
 - **保留 Adjustments**：同步云端 profile 时，不覆盖本地 `## Adjustments` 段
+- **持续会话**：用户通过 `/{slug} {message}` 开始与某位人物对话后，后续消息默认继续发送给该人物，直到用户发送 `/gurutalk end`，或通过 `/{another-figure} {message}` 直接切换人物
+- **输出前缀**：人物技能扮演期间，每条回复必须以 `"{Display Name}" Agent:\n\n` 开头
 
 ---
 
@@ -37,11 +39,19 @@ user-invocable: true
 3. 若仍缺少 `BIBLIOTALK_API_KEY`，不要继续调用 API。先给用户登录链接 `https://bibliotalk.space/login`，让用户登录后把 API key 复制过来。
 4. 若智能体引擎是 OpenClaw，agent 可执行：`printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo; mkdir -p ~/.openclaw; printf 'BIBLIOTALK_API_KEY=%s\n' "$key" >> ~/.openclaw/.env`
 5. 若智能体引擎是 Claude Code，agent 可执行：`printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo; tmp=$(mktemp); jq --arg key "$key" '.env.BIBLIOTALK_API_KEY=$key' ~/.claude/settings.json > "$tmp" && mv "$tmp" ~/.claude/settings.json`
-6. 初始化完成后，回到用户刚才的原始请求继续执行；不要要求用户手动编辑仓库内的 `gurus/.env`。
+6. 初始化完成后，回到用户刚才的原始请求继续执行；不要要求用户手动编辑仓库内的 `.env` 文件。
 
 ---
 
 ## 能力列表
+
+### 结束当前人物对话
+
+当用户发送 `/gurutalk end` 时，结束当前人物会话绑定，并明确告知当前人物对话已结束。结束后，用户的普通消息不再默认路由给上一个人物。
+
+### 切换当前人物对话
+
+当用户直接发送 `/{another-figure} {message}` 时，当前人物会话应立即切换到新的目标人物。旧人物不应继续回答这条消息，也不需要先显式执行 `/gurutalk end`。
 
 ### 查看云端可用大师目录
 
@@ -139,7 +149,7 @@ python scripts/version_manager.py --action rollback --agent claude --slug {slug}
 | 端点                   | 方法 | 用途                           |
 | ---------------------- | ---- | ---------------------------- |
 | `/v1/figures`          | GET  | 获取可用人物目录                |
-| `/v1/figure/{slug}`    | GET  | 获取人物 profile、欢迎语、版本   |
+| `/v1/figure/{slug}`    | GET  | 获取人物 profile 与版本         |
 | `/v1/query`            | POST | 在人物记忆库中检索              |
 | `/v1/quote/{quote_id}` | GET  | 获取引用详情 JSON              |
 
@@ -155,5 +165,6 @@ python scripts/version_manager.py --action rollback --agent claude --slug {slug}
 - 本元技能只负责本地落盘与目录管理，不参与任何"角色扮演"回答
 - 不要要求用户把 Bibliotalk 凭据写入仓库内的 `.env` 文件
 - 每个大师作为一个独立的技能安装在 `~/.claude/skills/{slug}/` (OpenClaw: `~/.openclaw/workspace/skills/{slug}/`)
-- 每个已安装人物的"独立技能"入口由其 `SKILL.md` 定义（通常唤醒命令为 `/{command}`）
+- 每个已安装人物的"独立技能"入口由其 `SKILL.md` 定义（通过 `/{command} {message}` 直接开聊）
+- 一旦进入某个人物对话，后续消息默认继续发给该人物，直到用户发送 `/gurutalk end`，或通过 `/{another-figure} {message}` 直接切换
 - 使用 `--agent` 参数指定目标 agent 类型：`claude` (默认) 或 `openclaw`

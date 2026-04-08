@@ -2,7 +2,7 @@
 
 # 大师云 (GuruTalk)
 
-> *"如果能随时让 Elon Musk 为你做系统设计，让 Charlie Munger 为你的商业决策做「反向思考」排雷，世界会怎样？"*
+> *"如果能随时让 Elon Musk 为你的系统设计做优化，让 Charlie Munger 为你的商业决策做「反向思考」排雷，世界会怎样？"*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Powered By: Bibliotalk](https://img.shields.io/badge/API-Bibliotalk-blue.svg)](#)
@@ -23,6 +23,8 @@
 1. **绝对忠于原味**：不仅语气到位，更是基于其核心认知（如 Musk 的第一性原理，Naval 的杠杆原理）。
 2. **强制引用（Citation）**：任何一句有价值的建议，系统都将提供`[引用标记]`，点击即可追溯到大师在哪本传记、哪期播客或哪条 Tweet 中说过。
 
+交互方式：直接使用 `/{figure} {message}` 开始对话。一旦进入某位人物，对话会持续绑定到该人物，后续消息默认继续发送给他，直到你发送 `/gurutalk end`，或者用 `/{another-figure} {message}` 切换到另一位人物。
+
 ---
 
 ## ⚡ 快速体验: The Book of Elon
@@ -32,6 +34,8 @@
 **当你在设计一个复杂的分布式系统架构时：**
 
 `❯ /elon-musk 我在设计一个高并发 AI API 平台：前面是 API Gateway，后面有用户服务、计费服务、模型路由服务，还有 Kafka、Redis、向量数据库和多个微服务。你觉得这个架构合理吗？`
+
+"Elon Musk" Agent:
 
 ⦿ 你的问题不是“系统不够复杂”，而是**复杂得毫无必要**。大多数工程师在系统设计时犯的错误，是在验证需求之前就开始堆叠组件。
 
@@ -70,15 +74,20 @@
    ```
 2. **直接开始调用元技能**
    ```
-   /skill gurutalk 有哪些上线的大师？
+   /gurutalk 有哪些上线的大师？
    ```
 3. **首次调用时按提示完成初始化**
    如果当前环境里还没有 `BIBLIOTALK_API_KEY`，Agent 会在对话里引导你完成登录和凭据写入。
 4. **招募大师到本地**
    ```
-   /skill gurutalk 招募 Elon Musk
+   /gurutalk 招募 Elon Musk
    ```
 5. **向大师提问**
    ```
-   /skill elon-musk 你觉得我的系统架构合理吗？（记得替换成你安装的大师名字）
+   /elon-musk 你觉得我的系统架构合理吗？
+   ```
+6. **继续追问或结束当前人物对话**
+   后续消息默认继续发送给当前人物，不需要重复输入 `/{figure}`。当你想切换人物时，直接发送另一个 `/{figure} {message}`；当你想退出模拟人物对话时，发送：
+   ```
+   /gurutalk end
    ```
