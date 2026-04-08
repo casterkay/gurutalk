@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import os
 import shutil
@@ -79,7 +80,9 @@ user-invocable: true
 7. 若检索结果不足，明确降级："关于这个问题，我目前缺少足够材料支撑。" 不要编造。
 8. 将所有引用条目列于脚注中：
 ```
-- [1]: [来源标题: "极短原文"](https://bibliotalk.space/q/:quote_id)
+---
+
+- [1]: ["原文片段"（不超过 10 字/词）](https://bibliotalk.space/q/:quote_id)
 - [2]: ...
 ```
 """
@@ -111,28 +114,43 @@ def _request_json(
     body: Optional[dict[str, Any]] = None,
 ) -> Any:
     data = None if body is None else json.dumps(body).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        headers={
-            **headers,
-            "User-Agent": "GuruTalk-SkillWriter/1.0 (+https://github.com/gurutalk)",
-        },
-        data=data,
-        method=method,
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            raw = resp.read().decode("utf-8")
-            return json.loads(raw)
-    except urllib.error.HTTPError as e:
-        body = ""
+    last_error: Exception | None = None
+    for attempt in range(3):
+        req = urllib.request.Request(
+            url,
+            headers={
+                **headers,
+                "User-Agent": "GuruTalk-SkillWriter/1.0 (+https://github.com/gurutalk)",
+            },
+            data=data,
+            method=method,
+        )
         try:
-            body = e.read().decode("utf-8")
-        except Exception:
-            body = ""
-        raise RuntimeError(f"HTTP {e.code} fetching {url}: {body or e.reason}") from e
-    except urllib.error.URLError as e:
-        raise RuntimeError(f"Network error fetching {url}: {e.reason}") from e
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                raw = resp.read().decode("utf-8")
+                return json.loads(raw)
+        except http.client.IncompleteRead as e:
+            last_error = e
+            if attempt == 2:
+                break
+            continue
+        except urllib.error.HTTPError as e:
+            err_body = ""
+            try:
+                err_body = e.read().decode("utf-8")
+            except Exception:
+                err_body = ""
+            raise RuntimeError(f"HTTP {e.code} fetching {url}: {err_body or e.reason}") from e
+        except urllib.error.URLError as e:
+            last_error = e
+            if attempt == 2:
+                break
+            continue
+    if last_error is None:
+        raise RuntimeError(f"Unknown error fetching {url}")
+    if isinstance(last_error, urllib.error.URLError):
+        raise RuntimeError(f"Network error fetching {url}: {last_error.reason}") from last_error
+    raise RuntimeError(f"Incomplete response fetching {url}: {last_error}") from last_error
 
 def _read_env_file(path: Path) -> dict[str, str]:
     if not path.exists():

@@ -4,9 +4,9 @@ description: "创建/同步/管理本地数字人格目录；用户通过 `/{slu
 user-invocable: true
 ---
 
-# 大师云 (GuruTalk)
+# GuruTalk 大师云
 
-你是**大师云的管理技能**。你不负责扮演任何单个人物。
+你是**GuruTalk/大师云**的**管理技能**。你不负责扮演任何单个人物。
 
 你的职责是：
 
@@ -145,8 +145,6 @@ python scripts/version_manager.py --action rollback --agent {agent} --slug {slug
 
 ## 备注
 
-- 本元技能只负责本地落盘与目录管理，不参与任何"角色扮演"回答
 - 每个大师作为一个独立的技能安装在对应 agent 的 skills 目录中：`~/.claude/skills/{slug}/`、`~/.openclaw/workspace/skills/{slug}/`、`~/.codex/skills/{slug}/`
-- 每个已安装人物的"独立技能"入口由其 `SKILL.md` 定义（通过 `/{figure} {message}` 直接开聊）
 - 一旦进入某个人物对话，后续消息默认继续发给该人物，直到用户发送 `/gurutalk end`，或通过 `/{another-figure} {message}` 直接切换
 - 使用 `--agent` 参数指定目标 agent 类型：`claude`、`openclaw` 或 `codex`
