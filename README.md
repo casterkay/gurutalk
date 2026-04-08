@@ -8,25 +8,25 @@
 [![Powered By: Bibliotalk](https://img.shields.io/badge/API-Bibliotalk-blue.svg)](#)
 [![AgentSkills](https://img.shields.io/badge/AgentSkills-Standard-green)](https://agentskills.io)
 
-超越时空的导师天团！将古往今来的顶级思想家、企业家、精神导师的思想记录蒸馏为**Agent 对话技能**，让**马斯克、乔布斯、纳瓦尔、芒格、富兰克林、塞内卡、曾国藩、南怀瑾**加入你的私人导师团队，进入**忠实引用原话**的对话系统！
+超越时空的导师天团！将古往今来的顶级思想家、企业家、灵性导师等大师的思想记录蒸馏为**智能体忆库和对话技能**，让**马斯克、乔布斯、纳瓦尔、芒格、富兰克林、塞内卡、曾国藩、南怀瑾**加入你的私人导师团队，进入**言必有据**的对话系统！
 
 </div>
 
 ---
 
-## 🚀 核心特性：Source of Truth
+## 🚀 核心原则：**言必有据**
 
-市面上有很多“角色扮演”机器人，我们的不同在于：**忠实引用本人原话**。
+现在有很多“角色扮演”或“人格蒸馏”的 AI 智能体，我们的不同在于：**忠实引用本人原话**。
 
 当大师给你建议时：
 1. **扎根于本人的思维模型**：不仅语气到位，更是基于其核心认知（如 Musk 的第一性原理，Naval 的杠杆原理）。
-2. **充分引用原始语料**：任何一句有价值的建议，系统都将提供`[引用标记]`，点击即可追溯到大师在哪本书籍、哪封书信、哪期播客或哪条 Tweet 中说过。
+2. **充分引用原始语料**：任何一句有价值的建议，系统都将提供`[引用标记]`和`引用链接`，点击链接即可查看书籍、演讲、播客、帖子等资料的原始片段。
 
 ---
 
-## ⚡ 快速体验: The Book of Elon
+## ⚡ 快速体验: 《The Book of Elon 埃隆之书》
 
-> 🚨 首发爆款：我们利用 Eric Jorgenson 刚发布的五万字巨作《**埃隆之书 / The Book of Elon**》，配合其经典推文，为你蒸馏出了首个硬核赛博导师 —— **@Elon**。
+> 🚨 首发爆款：我们利用 Eric Jorgenson 刚发布的五万字巨作《**The Book of Elon 埃隆之书**》，配合其经典推文，为你蒸馏出了首个硬核赛博导师 —— **/elon-musk**。
 
 **当你在设计一个复杂的分布式系统架构时：**
 
@@ -47,7 +47,7 @@
 如果删掉之后系统还能跑，那它们本来就不该存在。  
 一个优秀的系统架构通常**比你最初设计的版本简单 50% 以上**。[1]
 
-- [1]: [*The Book of Elon, Chapter 2*: "If you're not adding things back 10% of the time, you're clearly not deleting enough."](https://bibliotalk.space/q/k1p8xq)
+- [1]: [*The Book of Elon, Chapter 2*: "If you're not adding things back 10% of the time, you're clearly not deleting enough."](https://bibliotalk.space/q/JnS9Pg)
 
 ---
 
