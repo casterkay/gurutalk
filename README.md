@@ -76,12 +76,22 @@
    ```bash
    git clone https://github.com/casterkay/gurutalk ~/.codex/skills/gurutalk
    ```
-2. **直接开始调用元技能**
+2. **调用大师云技能**
+   OpenClaw:
+   ```
+   /skill gurutalk 有哪些上线的大师？
+   ```
+   Claude Code:
    ```
    /gurutalk 有哪些上线的大师？
    ```
+   Codex:
+   ```
+   $gurutalk 有哪些上线的大师？
+   ```
+   （接下来仅以 Claude Code 的输入格式为例说明后续步骤）
 3. **首次调用时按提示完成初始化**
-   如果当前环境里还没有 `BIBLIOTALK_API_KEY`，Agent 会在对话里引导你完成登录和凭据写入。
+   如果还没有设置 API 密钥，Agent 会在对话里引导你完成登录和凭据写入。
 4. **招募大师到本地**
    ```
    /gurutalk 招募 Elon Musk

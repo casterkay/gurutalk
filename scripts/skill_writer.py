@@ -47,9 +47,9 @@ DEFAULT_GURU_BASE_DIR = None  # Reserved for explicit overrides when needed
 
 GURU_SKILL_MD_TEMPLATE = """\
 ---
-name: {command}
+name: {slug}
 description: >
-    扮演 {display_name} 的技能。通过 `/{command} {{message}}` 开始扮演；一旦开始，在后续对话中默认继续扮演 {display_name}，直到用户发送 `/gurutalk end`，或通过 `/{{figure}} {{message}}` 切换人物。整个扮演期间，你发给用户的每条消息都必须以 `"{display_name}" Agent:\\n\\n` 开头，并且每次回答用户的问题前（如用户没有提问则视情况而定）必须先通过 query 接口搜索相关资料，然后在回答中给出忠实准确的引用。
+    扮演 {display_name} 的技能。通过 `/{slug} {{message}}` 开始扮演；一旦开始，在后续对话中默认继续扮演 {display_name}，直到用户发送 `/gurutalk end`，或通过 `/{{figure}} {{message}}` 切换人物。整个扮演期间，你发给用户的每条消息都必须以 `"{display_name}" Agent:\\n\\n` 开头，并且每次回答用户的问题前（如用户没有提问则视情况而定）必须先通过 query 接口搜索相关资料，然后在回答中给出忠实准确的引用。
 user-invocable: true
 ---
 
@@ -270,7 +270,6 @@ def build_profile_md(detail: dict, *, adjustments: Optional[str] = None) -> str:
 def build_guru_meta(
     *,
     slug: str,
-    command: str,
     detail: dict,
     headline: Optional[str],
     adjustments: Optional[str] = None,
@@ -280,7 +279,6 @@ def build_guru_meta(
     return {
         "kind": "guru",
         "slug": slug,
-        "command": command,
         "display_name": detail.get("display_name"),
         "headline": headline,
         "profile_version": detail.get("profile_version"),
@@ -295,11 +293,10 @@ def build_guru_meta(
     }
 
 
-def build_guru_skill_md(*, slug: str, command: str, display_name: str, headline: Optional[str]) -> str:
+def build_guru_skill_md(*, slug: str, display_name: str, headline: Optional[str]) -> str:
     headline_part = f" · {headline}" if headline else ""
     return GURU_SKILL_MD_TEMPLATE.format(
         slug=slug,
-        command=command,
         display_name=display_name,
         headline_part=headline_part,
     )
@@ -309,7 +306,6 @@ def guru_create(
     base_dir: Path,
     *,
     slug: str,
-    command: Optional[str] = None,
     force: bool = False,
 ) -> Path:
     skill_dir = base_dir / slug
@@ -329,10 +325,6 @@ def guru_create(
                 break
     except Exception:
         headline = None
-
-    final_command = (command or slug).strip().lstrip("/")
-    if not final_command:
-        final_command = slug
 
     existing_meta_path = skill_dir / "meta.json"
     created_at: Optional[str] = None
@@ -356,7 +348,6 @@ def guru_create(
 
     meta = build_guru_meta(
         slug=slug,
-        command=final_command,
         detail=detail,
         headline=headline,
         adjustments=str(existing_adjustments) if isinstance(existing_adjustments, str) else None,
@@ -372,7 +363,6 @@ def guru_create(
     display_name = str(detail.get("display_name", slug))
     skill_md = build_guru_skill_md(
         slug=slug,
-        command=final_command,
         display_name=display_name,
         headline=headline,
     )
@@ -389,7 +379,6 @@ def guru_sync(base_dir: Path, *, slug: str) -> str:
 
     meta_path = skill_dir / "meta.json"
     meta: dict = _read_json(meta_path) if meta_path.exists() else {"slug": slug}
-    command = str(meta.get("command") or slug).strip().lstrip("/") or slug
 
     existing_adjustments: Optional[str] = meta.get("adjustments")
 
@@ -417,7 +406,6 @@ def guru_sync(base_dir: Path, *, slug: str) -> str:
     # Always refresh meta timestamps; refresh profile only if version changed
     meta = build_guru_meta(
         slug=slug,
-        command=command,
         detail=detail,
         headline=headline,
         adjustments=str(existing_adjustments) if isinstance(existing_adjustments, str) else None,
@@ -434,7 +422,6 @@ def guru_sync(base_dir: Path, *, slug: str) -> str:
     display_name = str(detail.get("display_name", slug))
     skill_md = build_guru_skill_md(
         slug=slug,
-        command=command,
         display_name=display_name,
         headline=headline,
     )
@@ -463,7 +450,6 @@ def guru_list(base_dir: Path) -> list[dict]:
         gurus.append(
             {
                 "slug": meta.get("slug", d.name),
-                "command": meta.get("command", d.name),
                 "display_name": meta.get("display_name", d.name),
                 "profile_version": meta.get("profile_version", ""),
                 "updated_at": meta.get("updated_at", ""),
@@ -492,7 +478,6 @@ def main() -> None:
         ],
     )
     parser.add_argument("--slug", help="人物 slug（guru）")
-    parser.add_argument("--command", help="人物技能唤醒命令（guru，可选，默认等于 slug）")
     parser.add_argument(
         "--agent",
         default=DEFAULT_AGENT,
@@ -523,7 +508,7 @@ def main() -> None:
             for g in gurus:
                 updated = g["updated_at"][:10] if g.get("updated_at") else "未知"
                 pv = g.get("profile_version") or ""
-                print(f"  [{g['slug']}]  /{g['command']}  {g['display_name']}  {pv}")
+                print(f"  [{g['slug']}]  /{g['slug']}  {g['display_name']}  {pv}")
                 print(f"    更新: {updated}")
                 print()
         return
@@ -536,7 +521,6 @@ def main() -> None:
             skill_dir = guru_create(
                 base_dir,
                 slug=args.slug,
-                command=args.command,
                 force=bool(args.force),
             )
         except Exception as e:
@@ -544,7 +528,7 @@ def main() -> None:
             sys.exit(1)
         meta = _read_json(skill_dir / "meta.json")
         print(f"✅ 大师 Skill 已创建：{skill_dir}")
-        print(f"   触发词：/{meta.get('command', args.slug)}")
+        print(f"   触发词：/{meta.get('slug', args.slug)}")
         return
 
     if args.action == "guru-sync":
