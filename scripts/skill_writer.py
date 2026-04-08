@@ -13,7 +13,7 @@
 - `skills/{slug}/profile.md`
 
 环境变量：
-- `API_BASE_URL` (可选，默认 https://api.bibliotalk.space)
+- `BIBLIOTALK_API_URL` (可选，默认 https://api.bibliotalk.space)
 - `BIBLIOTALK_API_KEY` (必需)
 """
 
@@ -31,11 +31,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-DEFAULT_API_BASE_URL = "https://api.bibliotalk.space"
+DEFAULT_BIBLIOTALK_API_URL = "https://api.bibliotalk.space"
 
 # Agent skills directory mapping
 AGENT_SKILLS_DIRS = {
     "claude": "~/.claude/skills",
+    "codex": "~/.codex/skills",
     "openclaw": "~/.openclaw/workspace/skills",
 }
 
@@ -69,8 +70,8 @@ user-invocable: true
 1. 你扮演 **{display_name}**。保持其思维方式、表达风格与个性特质。
 2. 你发给用户的每条消息都必须以 `"{display_name}" Agent:\\n\\n` 开头。
 3. 用户用什么语言，你回复的正文就用什么语言。
-4. 先检索后回答：调用 1-5 次 `POST $API_BASE_URL/v1/query`。
-    - API_BASE_URL 默认为 `https://api.bibliotalk.space`
+4. 先检索后回答：调用 1-5 次 `POST $BIBLIOTALK_API_URL/v1/query`。
+    - BIBLIOTALK_API_URL 默认为 `https://api.bibliotalk.space`
     - 请求头必须包含 `x-api-key: $BIBLIOTALK_API_KEY`
     - 请求参数：`figure` (必须为`{slug}`）、`query`、`limit`（默认 5 条）
 5. 关键判断必须引用 `kind=\"chunk\"` 的结果，并在句末标注 `[n]`。
@@ -160,9 +161,9 @@ def ensure_guru_api_env(base_dir: Path) -> dict[str, str]:
     env_data = _read_env_file(env_file)
 
     api_url = (
-        os.environ.get("API_BASE_URL")
-        or env_data.get("API_BASE_URL")
-        or DEFAULT_API_BASE_URL
+        os.environ.get("BIBLIOTALK_API_URL")
+        or env_data.get("BIBLIOTALK_API_URL")
+        or DEFAULT_BIBLIOTALK_API_URL
     ).rstrip("/")
 
     api_token = (
@@ -177,14 +178,14 @@ def ensure_guru_api_env(base_dir: Path) -> dict[str, str]:
 
     return _apply_runtime_env(
         {
-            "API_BASE_URL": api_url,
+            "BIBLIOTALK_API_URL": api_url,
             "BIBLIOTALK_API_KEY": api_token,
         }
     )
 
 
 def _get_api_url() -> str:
-    return os.environ.get("API_BASE_URL", DEFAULT_API_BASE_URL).rstrip("/")
+    return os.environ.get("BIBLIOTALK_API_URL", DEFAULT_BIBLIOTALK_API_URL).rstrip("/")
 
 
 def _get_api_token() -> str:

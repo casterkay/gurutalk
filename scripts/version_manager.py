@@ -32,6 +32,7 @@ from typing import Any, Iterable
 # Agent skills directory mapping
 AGENT_SKILLS_DIRS = {
     "claude": "~/.claude/skills",
+    "codex": "~/.codex/skills",
     "openclaw": "~/.openclaw/workspace/skills",
 }
 

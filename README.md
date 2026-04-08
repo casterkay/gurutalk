@@ -72,6 +72,10 @@
    ```bash
    git clone https://github.com/casterkay/gurutalk ~/.claude/skills/gurutalk
    ```
+   Codex:
+   ```bash
+   git clone https://github.com/casterkay/gurutalk ~/.codex/skills/gurutalk
+   ```
 2. **直接开始调用元技能**
    ```
    /gurutalk 有哪些上线的大师？

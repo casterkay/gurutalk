@@ -10,9 +10,9 @@ user-invocable: true
 
 你的职责是：
 
-1. 管理本地数字人格目录（`~/.claude/skills/` 目录）
+1. 管理本地数字人格目录（按 agent 分别落盘到对应的 skills 目录）
 2. 从 **Bibliotalk API** 拉取并同步人物 `profile.md`
-3. 为每个已安装人物生成一个独立的技能文件夹：`~/.claude/skills/{slug}/`
+3. 为每个已安装人物生成一个独立的技能文件夹：`~/.claude/skills/{slug}/`、`~/.openclaw/workspace/skills/{slug}/` 或 `~/.codex/skills/{slug}/`
 4. 在首次调用缺少 API key 时，先获取用户的邮箱，再由 agent 主动请求发送 magic link，然后引导用户接收和点击邮件中的链接，最后把 API Key 复制过来
 5. 确保每个独立技能文件夹里至少包含：`meta.json`、`SKILL.md`、`profile.md`
 
@@ -22,26 +22,24 @@ user-invocable: true
 
 ## 核心原则（元技能层）
 
-- **不扮演**：本元技能只做安装/同步/管理，不进入任何人物的第一人称回答
-- **与 PRD 对齐**：本地落盘路径以 `~/.claude/skills/{slug}/profile.md` 为准（OpenClaw 为 `~/.openclaw/workspace/skills/{slug}/`）
-- **统一凭据**：本地 guru 统一从当前 agent 环境读取 `BIBLIOTALK_API_KEY`；`API_BASE_URL` 缺失时默认 `https://api.bibliotalk.space`
-- **最小结构**：每个人物目录固定包含 `meta.json`、`SKILL.md`、`profile.md`
-- **保留 Adjustments**：同步云端 profile 时，不覆盖本地 `## Adjustments` 段
+- **不扮演人物**：本元技能只做安装/同步/管理，不进入任何人物的第一人称回答
+- **统一凭据**：从当前环境读取 `BIBLIOTALK_API_KEY`；`BIBLIOTALK_API_URL` 缺失时默认 `https://api.bibliotalk.space`
+- **结构一致**：每个人物目录包含 `meta.json`、`SKILL.md`、`profile.md`
+- **保留自定义修正**：同步云端 profile 时，不覆盖本地 `## Adjustments` 段
 - **持续会话**：用户通过 `/{slug} {message}` 开始与某位人物对话后，后续消息默认继续发送给该人物，直到用户发送 `/gurutalk end`，或通过 `/{another-figure} {message}` 直接切换人物
-- **输出前缀**：人物技能扮演期间，每条回复必须以 `"{Display Name}" Agent:\n\n` 开头
 
 ---
 
 ## 首次初始化（仅在缺少 API key 时）
 
 1. 任何需要调用 Bibliotalk API 的动作前，先检查当前环境是否已有 `BIBLIOTALK_API_KEY`。
-2. `API_BASE_URL` 若未设置，则默认使用 `https://api.bibliotalk.space`。
-3. 若仍缺少 `BIBLIOTALK_API_KEY`，不要继续调用 API。先获取用户的 email，然后主动请求后端发送 magic link：`GET https://bibliotalk.space/login/magiclink?email={urlencoded_email}`
-4. 触发完成后，告知用户：去邮箱查收 Bibliotalk 发出的 magic link 邮件，并点击其中的 magic link 完成登录，然后复制网页上显示的 API key。
-5. 将 API key 保存到环境变量中：
-  - 若智能体引擎是 OpenClaw，可执行：`printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo; mkdir -p ~/.openclaw; printf 'BIBLIOTALK_API_KEY=%s\n' "$key" >> ~/.openclaw/.env`
-  - 若智能体引擎是 Claude Code，可执行：`printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo; tmp=$(mktemp); jq --arg key "$key" '.env.BIBLIOTALK_API_KEY=$key' ~/.claude/settings.json > "$tmp" && mv "$tmp" ~/.claude/settings.json`
-6. 初始化完成后，继续执行用户刚才的原始请求。
+2. 若缺少 `BIBLIOTALK_API_KEY`，不要继续调用 API。先获取用户的 email，然后主动请求后端发送 magic link：`GET https://bibliotalk.space/login/magiclink?email={urlencoded_email}`
+3. 触发完成后，告知用户：去邮箱查收 Bibliotalk 发出的 magic link 邮件，并点击其中的 magic link 完成登录，然后复制网页上显示的 API key。
+4. 将 API key 保存到全局环境变量配置中：
+  - 首先执行`printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo`
+  - 然后，若Agent引擎是 OpenClaw，可执行：`printf 'BIBLIOTALK_API_KEY=%s\n' "$key" >> ~/.openclaw/.env`；若是 Claude Code，可执行：`tmp=$(mktemp); jq --arg key "$key" '.env.BIBLIOTALK_API_KEY=$key' ~/.claude/settings.json > "$tmp" && mv "$tmp" ~/.claude/settings.json`
+  - 或者，添加到 `~/.bashrc`或`~/.zshrc` 等 shell 配置文件中：`export BIBLIOTALK_API_KEY="$key"`
+5. 初始化完成后，继续执行用户刚才的原始请求。
 
 ---
 
@@ -58,24 +56,19 @@ user-invocable: true
 ### 查看云端可用大师目录
 
 1. 先确保上面的"首次初始化"已经完成。
-2. 调用 `GET $API_BASE_URL/v1/figures`，使用请求头 `x-api-key: $BIBLIOTALK_API_KEY`
+2. 调用 `GET $BIBLIOTALK_API_URL/v1/figures`，使用请求头 `x-api-key: $BIBLIOTALK_API_KEY`
 3. 以列表形式展示人物 `slug`、`display_name`、`headline`、`profile_version`
-4. 若该人物已在本地安装（存在 `~/.claude/skills/{slug}/meta.json`），在列表中标记"已安装"
+4. 若该人物已在本地安装（存在 `~/.claude/skills/{slug}/meta.json`、`~/.openclaw/workspace/skills/{slug}/meta.json` 或 `~/.codex/skills/{slug}/meta.json`），在列表中标记"已安装"
 
 ### 查看本地已安装的人格目录
 
 执行：
 
 ```bash
-python scripts/skill_writer.py --action guru-list --agent claude
+python scripts/skill_writer.py --action guru-list --agent {agent}
 ```
 
-对于 OpenClaw：
-```bash
-python scripts/skill_writer.py --action guru-list --agent openclaw
-```
-
-输出本地 `~/.claude/skills/` (或 `~/.openclaw/workspace/skills/`) 下所有已安装大师技能（以 `meta.json` 为准）。
+`agent` 可取 `claude`、`openclaw`、`codex`。输出对应 skills 目录下所有已安装大师技能（以 `meta.json` 为准）。
 
 ### 安装一个大师技能到本地
 
@@ -84,34 +77,22 @@ python scripts/skill_writer.py --action guru-list --agent openclaw
 执行：
 
 ```bash
-python scripts/skill_writer.py --action guru-create --agent claude --slug {slug}
-```
-
-对于 OpenClaw：
-```bash
-python scripts/skill_writer.py --action guru-create --agent openclaw --slug {slug}
-```
-
-可选：指定唤醒命令（默认等于 slug）：
-
-```bash
-python scripts/skill_writer.py --action guru-create --agent claude --slug {slug} --command {command}
+python scripts/skill_writer.py --action guru-create --agent {agent} --slug {slug}
 ```
 
 安装后会生成：
 
-- `~/.claude/skills/{slug}/profile.md`（云端同步 + 本地 Adjustments）
-- `~/.claude/skills/{slug}/SKILL.md`（该人物的独立扮演技能）
-- `~/.claude/skills/{slug}/meta.json`（目录元数据）
-
-对于 OpenClaw，路径为 `~/.openclaw/workspace/skills/{slug}/`
+- `~/.claude/skills/{slug}/profile.md`（`claude`）
+- `~/.openclaw/workspace/skills/{slug}/profile.md`（`openclaw`）
+- `~/.codex/skills/{slug}/profile.md`（`codex`）
+- `SKILL.md`、`meta.json` 会生成在对应的技能目录中
 
 ### 同步某个大师的最新 profile
 
 执行：
 
 ```bash
-python scripts/skill_writer.py --action guru-sync --agent claude --slug {slug}
+python scripts/skill_writer.py --action guru-sync --agent {agent} --slug {slug}
 ```
 
 同步行为：
@@ -124,7 +105,7 @@ python scripts/skill_writer.py --action guru-sync --agent claude --slug {slug}
 执行：
 
 ```bash
-python scripts/skill_writer.py --action guru-remove --agent claude --slug {slug}
+python scripts/skill_writer.py --action guru-remove --agent {agent} --slug {slug}
 ```
 
 ## 本地版本管理
@@ -133,13 +114,13 @@ python scripts/skill_writer.py --action guru-remove --agent claude --slug {slug}
 
 ```bash
 # 创建快照
-python scripts/version_manager.py --action snapshot --agent claude --slug {slug}
+python scripts/version_manager.py --action snapshot --agent {agent} --slug {slug}
 
 # 列出快照
-python scripts/version_manager.py --action list --agent claude --slug {slug}
+python scripts/version_manager.py --action list --agent {agent} --slug {slug}
 
 # 回滚到某个快照 label
-python scripts/version_manager.py --action rollback --agent claude --slug {slug} --version {label}
+python scripts/version_manager.py --action rollback --agent {agent} --slug {slug} --version {label}
 ```
 
 ---
@@ -157,7 +138,7 @@ python scripts/version_manager.py --action rollback --agent claude --slug {slug}
 
 环境变量：
 
-- 当前 agent 环境中的 `API_BASE_URL` — API 地址（默认 `https://api.bibliotalk.space`）
+- 当前 agent 环境中的 `BIBLIOTALK_API_URL` — Bibliotalk API 地址（默认 `https://api.bibliotalk.space`）
 - 当前 agent 环境中的 `BIBLIOTALK_API_KEY` — Bibliotalk API key
 
 ---
@@ -165,8 +146,7 @@ python scripts/version_manager.py --action rollback --agent claude --slug {slug}
 ## 备注
 
 - 本元技能只负责本地落盘与目录管理，不参与任何"角色扮演"回答
-- 不要要求用户把 Bibliotalk 凭据写入仓库内的 `.env` 文件
-- 每个大师作为一个独立的技能安装在 `~/.claude/skills/{slug}/` (OpenClaw: `~/.openclaw/workspace/skills/{slug}/`)
-- 每个已安装人物的"独立技能"入口由其 `SKILL.md` 定义（通过 `/{command} {message}` 直接开聊）
+- 每个大师作为一个独立的技能安装在对应 agent 的 skills 目录中：`~/.claude/skills/{slug}/`、`~/.openclaw/workspace/skills/{slug}/`、`~/.codex/skills/{slug}/`
+- 每个已安装人物的"独立技能"入口由其 `SKILL.md` 定义（通过 `/{figure} {message}` 直接开聊）
 - 一旦进入某个人物对话，后续消息默认继续发给该人物，直到用户发送 `/gurutalk end`，或通过 `/{another-figure} {message}` 直接切换
-- 使用 `--agent` 参数指定目标 agent 类型：`claude` (默认) 或 `openclaw`
+- 使用 `--agent` 参数指定目标 agent 类型：`claude`、`openclaw` 或 `codex`
