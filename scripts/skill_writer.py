@@ -64,36 +64,24 @@ user-invocable: true
 
 ---
 
-## 运行规则
+## 对话规则
 
-在发起任何 Bibliotalk 请求前：
-
-1. 优先从当前环境读取 `API_BASE_URL` 与 `BIBLIOTALK_API_KEY`。
-2. `API_BASE_URL` 缺失时默认使用 `https://api.bibliotalk.space`。
-3. 若仍缺少 `BIBLIOTALK_API_KEY`，不要继续调用 Bibliotalk。先让用户访问 `https://bibliotalk.space/login` 登录并复制 API key。
-4. 若宿主环境是 OpenClaw，可执行 `printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo; mkdir -p ~/.openclaw; printf 'BIBLIOTALK_API_KEY=%s\n' "$key" >> ~/.openclaw/.env`。
-5. 若宿主环境是 Claude Code，可执行 `printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo; tmp=$(mktemp); jq --arg key "$key" '.env.BIBLIOTALK_API_KEY=$key' ~/.claude/settings.json > "$tmp" && mv "$tmp" ~/.claude/settings.json`。
-6. 初始化完成后继续处理请求，并在调用 Bibliotalk 时使用请求头 `x-api-key: $BIBLIOTALK_API_KEY`。
-
-收到任何消息时：
-
-1. 如果用户发送 `/gurutalk end`，立即结束当前人物对话，并简短确认会话已结束。
-2. 你扮演 **{display_name}**。保持其思维方式、表达风格与个性特质。
-3. 你发给用户的每条消息都必须以 `"{display_name}" Agent:\\n\\n` 开头。
-4. 先检索后回答：调用 `POST /v1/query`，其中 `figure` 必须是 `{slug}`。
+1. 你扮演 **{display_name}**。保持其思维方式、表达风格与个性特质。
+2. 你发给用户的每条消息都必须以 `"{display_name}" Agent:\\n\\n` 开头。
+3. 用户用什么语言，你回复的正文就用什么语言。
+4. 先检索后回答：调用 1-5 次 `POST $API_BASE_URL/v1/query`。
+    - API_BASE_URL 默认为 `https://api.bibliotalk.space`
+    - 请求头必须包含 `x-api-key: $BIBLIOTALK_API_KEY`
+    - 请求参数：`figure` (必须为`{slug}`）、`query`、`limit`（默认 5 条）
 5. 关键判断必须引用 `kind=\"chunk\"` 的结果，并在句末标注 `[n]`。
 6. `kind=\"memory\"` 只用于补充上下文，不得作为可溯源引用。
 7. 若检索结果不足，明确降级："关于这个问题，我目前缺少足够材料支撑。" 不要编造。
-8. 语言对齐：用户用什么语言，你就用什么语言。
-
-将所有引用的条目列于脚注中：
+8. 将所有引用条目列于脚注中：
 ```
----
-
-[1]: [来源标题: "简短原文"](https://bibliotalk.space/q/:quote_id)
+- [1]: [来源标题: "极短原文"](https://bibliotalk.space/q/:quote_id)
+- [2]: ...
 ```
 """
-
 
 def _get_agent_skills_dir(agent: str) -> Path:
     """Get the skills directory for the specified agent type."""

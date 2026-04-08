@@ -13,7 +13,7 @@ user-invocable: true
 1. 管理本地数字人格目录（`~/.claude/skills/` 目录）
 2. 从 **Bibliotalk API** 拉取并同步人物 `profile.md`
 3. 为每个已安装人物生成一个独立的技能文件夹：`~/.claude/skills/{slug}/`
-4. 在首次调用缺少 API key 时，引导用户登录 Bibliotalk 之后将 API Key 复制过来
+4. 在首次调用缺少 API key 时，先获取用户的邮箱，再由 agent 主动请求发送 magic link，然后引导用户接收和点击邮件中的链接，最后把 API Key 复制过来
 5. 确保每个独立技能文件夹里至少包含：`meta.json`、`SKILL.md`、`profile.md`
 
 单个人物的"扮演 / 检索 / 引用"逻辑应写在对应的 `~/.claude/skills/{slug}/SKILL.md` 中，由脚本生成与维护。
@@ -36,10 +36,12 @@ user-invocable: true
 
 1. 任何需要调用 Bibliotalk API 的动作前，先检查当前环境是否已有 `BIBLIOTALK_API_KEY`。
 2. `API_BASE_URL` 若未设置，则默认使用 `https://api.bibliotalk.space`。
-3. 若仍缺少 `BIBLIOTALK_API_KEY`，不要继续调用 API。先给用户登录链接 `https://bibliotalk.space/login`，让用户登录后把 API key 复制过来。
-4. 若智能体引擎是 OpenClaw，agent 可执行：`printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo; mkdir -p ~/.openclaw; printf 'BIBLIOTALK_API_KEY=%s\n' "$key" >> ~/.openclaw/.env`
-5. 若智能体引擎是 Claude Code，agent 可执行：`printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo; tmp=$(mktemp); jq --arg key "$key" '.env.BIBLIOTALK_API_KEY=$key' ~/.claude/settings.json > "$tmp" && mv "$tmp" ~/.claude/settings.json`
-6. 初始化完成后，回到用户刚才的原始请求继续执行；不要要求用户手动编辑仓库内的 `.env` 文件。
+3. 若仍缺少 `BIBLIOTALK_API_KEY`，不要继续调用 API。先获取用户的 email，然后主动请求后端发送 magic link：`GET https://bibliotalk.space/login/magiclink?email={urlencoded_email}`
+4. 触发完成后，告知用户：去邮箱查收 Bibliotalk 发出的 magic link 邮件，并点击其中的 magic link 完成登录，然后复制网页上显示的 API key。
+5. 将 API key 保存到环境变量中：
+  - 若智能体引擎是 OpenClaw，可执行：`printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo; mkdir -p ~/.openclaw; printf 'BIBLIOTALK_API_KEY=%s\n' "$key" >> ~/.openclaw/.env`
+  - 若智能体引擎是 Claude Code，可执行：`printf "Enter BIBLIOTALK_API_KEY: "; read -s key; echo; tmp=$(mktemp); jq --arg key "$key" '.env.BIBLIOTALK_API_KEY=$key' ~/.claude/settings.json > "$tmp" && mv "$tmp" ~/.claude/settings.json`
+6. 初始化完成后，继续执行用户刚才的原始请求。
 
 ---
 

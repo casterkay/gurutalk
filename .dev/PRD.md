@@ -207,8 +207,10 @@ API base URL：`https://api.bibliotalk.space`
 ### 5.1 鉴权
 
 - 使用 Better Auth。
-- 终端用户可先在 `https://bibliotalk.space/login` 完成 GitHub / Google / Apple OAuth 登录。
-- 登录后在 `https://bibliotalk.space/account/api-key` 获取或轮换自己的长期 `BIBLIOTALK_API_KEY`。
+- GuruTalk 初始化缺少 API key 时，应先获取用户 email，再由 agent 主动触发 magic link 发送；统一请求模板为：`GET https://bibliotalk.space/login/magiclink?email={urlencoded_email}`
+- `{urlencoded_email}` 必须是 URL 编码后的 email；agent 不应只让用户自己先打开登录页面。
+- 用户点击邮件中的 magic link 后，在 `https://bibliotalk.space/account/api-key` 获取或轮换自己的长期 `BIBLIOTALK_API_KEY`，再复制回 agent。
+- `https://bibliotalk.space/login` 仍可作为人工登录入口，并支持 GitHub / Google / Apple OAuth。
 - 所有运行时 Bibliotalk API 请求均通过 `x-api-key: <BIBLIOTALK_API_KEY>` 鉴权。
 
 ### 5.2 获取人物目录
