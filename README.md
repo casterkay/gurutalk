@@ -8,7 +8,7 @@
 [![Powered By: Bibliotalk](https://img.shields.io/badge/API-Bibliotalk-blue.svg)](#)
 [![AgentSkills](https://img.shields.io/badge/AgentSkills-Standard-green)](https://agentskills.io)
 
-超越时空的导师天团！将古往今来的顶级思想家、企业家、灵性导师等大师的思想记录蒸馏为**智能体忆库和对话技能**，让**马斯克、乔布斯、纳瓦尔、芒格、富兰克林、塞内卡、曾国藩、南怀瑾**加入你的私人导师团队，进入**言必有据**的对话系统！
+超越时空的导师天团！将古往今来的顶级思想家、企业家、灵性导师等大师的思想记录蒸馏为**智能体忆库和对话技能**，让**马斯克、乔布斯、纳瓦尔、芒格、富兰克林、曾国藩、南怀瑾**加入你的私人导师团队，进入**言必有据**的对话系统！
 
 </div>
 
