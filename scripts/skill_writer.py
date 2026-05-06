@@ -83,7 +83,7 @@ user-invocable: true
 ```
 ---
 
-- [1]: ["原文片段"（不超过 10 字/词）](https://bibliotalk.space/q/:quote_id)
+- [1]: ["原文片段"（不超过 10 字/词）](https://bibliotalk.space/:quote_id)
 - [2]: ...
 ```
 """
