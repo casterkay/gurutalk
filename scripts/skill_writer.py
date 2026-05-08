@@ -4,16 +4,16 @@
 一个小型脚手架工具，用于创建/同步 GuruTalk 人物 Skill（`skills/{slug}/`）。
 
 用途：
-- 从 Bibliotalk API 拉取人物 profile，落盘到 `skills/{slug}/profile.md`
+- 从 Gurutalk API 拉取人物 profile，落盘到 `skills/{slug}/profile.md`
 - 生成可唤醒的 `skills/{slug}/SKILL.md`
-- 复制当前 gurutalk 技能目录的 `.env` 与 `scripts/bibliotalk_client.py`
+- 复制当前 gurutalk 技能目录的 `.env` 与 `scripts/gurutalk_client.py`
 
 目录结构（最小）：
 - `skills/{slug}/meta.json`
 - `skills/{slug}/SKILL.md`
 - `skills/{slug}/profile.md`
 - `skills/{slug}/.env`
-- `skills/{slug}/scripts/bibliotalk_client.py`
+- `skills/{slug}/scripts/gurutalk_client.py`
 
 运行时配置来源：
 - 当前 gurutalk 技能目录下的 `.env`
@@ -29,7 +29,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from bibliotalk_client import (fetch_figure_detail, fetch_figures_index,
+from gurutalk_client import (fetch_figure_detail, fetch_figures_index,
                                load_runtime_config)
 
 # Agent skills directory mapping
@@ -44,7 +44,7 @@ DEFAULT_AGENT = "claude"
 DEFAULT_GURU_BASE_DIR = None  # Reserved for explicit overrides when needed
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_ENV_FILE = PROJECT_ROOT / ".env"
-SOURCE_CLIENT_SCRIPT = PROJECT_ROOT / "scripts" / "bibliotalk_client.py"
+SOURCE_CLIENT_SCRIPT = PROJECT_ROOT / "scripts" / "gurutalk_client.py"
 
 
 GURU_SKILL_MD_TEMPLATE = """\
@@ -57,7 +57,7 @@ user-invocable: true
 
 # {display_name}
 
-> 本技能由`gurutalk`技能生成与维护。资料来源：Bibliotalk 公有语料库检索与引用。
+> 本技能由`gurutalk`技能生成与维护。资料来源：Gurutalk 公有语料库检索与引用。
 
 ---
 
@@ -72,10 +72,10 @@ user-invocable: true
 1. 你扮演 **{display_name}**。保持其思维方式、表达风格与个性特质。
 2. 你发给用户的每条消息都必须以 `"{display_name}" Agent:\\n\\n` 开头。
 3. 用户用什么语言，你回复的正文就用什么语言。
-4. 先检索后回答：调用 1-5 次 `python scripts/bibliotalk_client.py query --figure {slug} --query "{{用户问题}}" --limit 5`。（所有命令以本技能文件夹为工作目录运行）
-5. 如需核对某条引文详情，调用 `python scripts/bibliotalk_client.py quote --quote-id {quote_id}`。
-6. 若当前技能目录下的 `.env` 缺少 `BIBLIOTALK_API_KEY`，提示用户在自己的命令行中运行 `python {SKILL_DIR}/scripts/bibliotalk_client.py configure`（插入本技能目录路径），然后按提示输入 API key。
-7. `bibliotalk_client.py` 会自动读取当前技能目录下的 `.env`，不要拼接任何包含密钥的 shell 命令。
+4. 先检索后回答：调用 1-5 次 `python scripts/gurutalk_client.py query --figure {slug} --query "{{用户问题}}" --limit 5`。（所有命令以本技能文件夹为工作目录运行）
+5. 如需核对某条引文详情，调用 `python scripts/gurutalk_client.py quote --quote-id {quote_id}`。
+6. 若当前技能目录下的 `.env` 缺少 `GURUTALK_API_KEY`，提示用户在自己的命令行中运行 `python {SKILL_DIR}/scripts/gurutalk_client.py configure`（插入本技能目录路径），然后按提示输入 API key。
+7. `gurutalk_client.py` 会自动读取当前技能目录下的 `.env`，不要拼接任何包含密钥的 shell 命令。
 8. 关键判断必须引用 `kind=\"chunk\"` 的结果，并在句末标注 `[n]`。
 9. `kind=\"memory\"` 只用于补充上下文，不得作为可溯源引用。
 10. 若检索结果不足，明确降级："关于这个问题，我目前缺少足够材料支撑。" 不要编造。
@@ -83,7 +83,7 @@ user-invocable: true
 ```
 ---
 
-- [1]: ["原文片段"（不超过 10 字/词）](https://bibliotalk.space/:quote_id)
+- [1]: ["原文片段"（不超过 10 字/词）](https://talks.guru/:quote_id)
 - [2]: ...
 ```
 """
@@ -110,14 +110,14 @@ def _write_json(path: Path, data: dict) -> None:
 def _copy_runtime_assets(skill_dir: Path) -> None:
     if not SOURCE_ENV_FILE.exists():
         raise RuntimeError(
-            f"Missing GuruTalk runtime env file: {SOURCE_ENV_FILE}. Run `python scripts/bibliotalk_client.py configure` in the current gurutalk skill directory first."
+            f"Missing GuruTalk runtime env file: {SOURCE_ENV_FILE}. Run `python scripts/gurutalk_client.py configure` in the current gurutalk skill directory first."
         )
 
     scripts_dir = skill_dir / "scripts"
     scripts_dir.mkdir(parents=True, exist_ok=True)
 
     shutil.copy2(SOURCE_ENV_FILE, skill_dir / ".env")
-    shutil.copy2(SOURCE_CLIENT_SCRIPT, scripts_dir / "bibliotalk_client.py")
+    shutil.copy2(SOURCE_CLIENT_SCRIPT, scripts_dir / "gurutalk_client.py")
 
 
 def _extract_adjustments(profile_md: str) -> str:
@@ -185,7 +185,7 @@ def build_guru_meta(
         "updated_at": now,
         "synced_at": now,
         "source": {
-            "type": "bibliotalk",
+            "type": "gurutalk",
             "api_url": api_url,
         },
     }

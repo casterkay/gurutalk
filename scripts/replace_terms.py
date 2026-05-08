@@ -75,7 +75,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--exclude-dirs",
         nargs="*",
-        default=[".git", "node_modules", "dist", "build", "scripts", ".history", "__pycache__", ".next", "storage", "output", "data"],
+        default=[".git", "node_modules", "dist", "build", ".history", "__pycache__", ".next", "storage", "output", "data"],
         help="Directory name patterns to exclude",
     )
     parser.add_argument(

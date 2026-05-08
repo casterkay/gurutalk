@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Bibliotalk API client for GuruTalk skills.
+"""Gurutalk API client for GuruTalk skills.
 
 This script always reads runtime configuration from the current skill directory's
 `.env` file. When copied into a generated figure skill, it keeps working with the
 same relative layout:
 
 - <skill_dir>/.env
-- <skill_dir>/scripts/bibliotalk_client.py
+- <skill_dir>/scripts/gurutalk_client.py
 """
 
 from __future__ import annotations
@@ -32,9 +32,9 @@ except ImportError as exc:
 	) from exc
 
 
-DEFAULT_BIBLIOTALK_API_URL = "https://api.bibliotalk.space"
-DEFAULT_BIBLIOTALK_WEB_URL = "https://bibliotalk.space"
-USER_AGENT = "GuruTalk-BibliotalkClient/1.0 (+https://github.com/gurutalk)"
+DEFAULT_GURUTALK_API_URL = "https://api.talks.guru"
+DEFAULT_GURUTALK_WEB_URL = "https://talks.guru"
+USER_AGENT = "GuruTalk-GurutalkClient/1.0 (+https://github.com/gurutalk)"
 
 
 @dataclass(frozen=True)
@@ -64,23 +64,23 @@ def load_runtime_config(
 		env_values = dotenv_values(env_path)
 
 	api_url = str(
-		env_values.get("BIBLIOTALK_API_URL")
-		or os.environ.get("BIBLIOTALK_API_URL")
-		or DEFAULT_BIBLIOTALK_API_URL
+		env_values.get("GURUTALK_API_URL")
+		or os.environ.get("GURUTALK_API_URL")
+		or DEFAULT_GURUTALK_API_URL
 	).strip().rstrip("/")
 	api_key = str(
-		env_values.get("BIBLIOTALK_API_KEY")
-		or os.environ.get("BIBLIOTALK_API_KEY")
+		env_values.get("GURUTALK_API_KEY")
+		or os.environ.get("GURUTALK_API_KEY")
 		or ""
 	).strip()
 
 	if require_api_key and not env_path.exists():
 		raise RuntimeError(
-			f"Missing runtime env file: {env_path}. Run `python scripts/bibliotalk_client.py configure` in this skill directory and retry."
+			f"Missing runtime env file: {env_path}. Run `python scripts/gurutalk_client.py configure` in this skill directory and retry."
 		)
 	if require_api_key and not api_key:
 		raise RuntimeError(
-			f"Missing BIBLIOTALK_API_KEY in {env_path}. Run `python scripts/bibliotalk_client.py configure` in this skill directory and retry."
+			f"Missing GURUTALK_API_KEY in {env_path}. Run `python scripts/gurutalk_client.py configure` in this skill directory and retry."
 		)
 
 	return RuntimeConfig(
@@ -141,7 +141,7 @@ def _request_json(
 
 def send_magiclink(email: str) -> dict[str, Any]:
 	quoted_email = urllib.parse.quote(email, safe="")
-	url = f"{DEFAULT_BIBLIOTALK_WEB_URL}/login/magiclink?email={quoted_email}"
+	url = f"{DEFAULT_GURUTALK_WEB_URL}/login/magiclink?email={quoted_email}"
 	req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT}, method="GET")
 	try:
 		with urllib.request.urlopen(req, timeout=20) as resp:
@@ -192,21 +192,21 @@ def configure_runtime(skill_dir: str | Path | None = None) -> dict[str, Any]:
 	config = load_runtime_config(skill_dir=skill_dir, require_api_key=False)
 
 	try:
-		api_key = getpass("Enter Bibliotalk API Key: ").strip()
+		api_key = getpass("Enter Gurutalk API Key: ").strip()
 	except (EOFError, KeyboardInterrupt) as exc:
 		raise RuntimeError("Cancelled API key input") from exc
 
 	if not api_key:
 		raise RuntimeError("Empty API key; nothing was saved")
 
-	_write_env_value(config.env_path, "BIBLIOTALK_API_KEY", api_key)
+	_write_env_value(config.env_path, "GURUTALK_API_KEY", api_key)
 
 	return {
 		"ok": True,
 		"skill_dir": str(config.skill_dir),
 		"env_path": str(config.env_path),
 		"api_url": config.api_url,
-		"configured": ["BIBLIOTALK_API_KEY"],
+		"configured": ["GURUTALK_API_KEY"],
 	}
 
 
@@ -250,7 +250,7 @@ def _print_json(data: Any) -> None:
 
 
 def main() -> None:
-	parser = argparse.ArgumentParser(description="Bibliotalk client for GuruTalk skills")
+	parser = argparse.ArgumentParser(description="Gurutalk client for GuruTalk skills")
 	parser.add_argument(
 		"--skill-dir",
 		default=None,
@@ -260,7 +260,7 @@ def main() -> None:
 
 	subparsers.add_parser("configure", help="交互式写入当前技能目录的 API key")
 
-	magiclink_parser = subparsers.add_parser("magiclink", help="请求 Bibliotalk magic link")
+	magiclink_parser = subparsers.add_parser("magiclink", help="请求 Gurutalk magic link")
 	magiclink_parser.add_argument("--email", required=True, help="登录邮箱")
 
 	subparsers.add_parser("figures", help="获取云端人物目录")

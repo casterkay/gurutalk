@@ -6,7 +6,6 @@ env:
   - name: GURUTALK_API_KEY
     required: true
     description: API key for communicating with the Gurutalk server
-
 ---
 
 # GuruTalk 大师云

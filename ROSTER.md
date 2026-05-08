@@ -4,12 +4,15 @@
 - Charlie Munger
 - Paul Graham
 - Benjamin Franklin
+- Aristotle
 - Marcus Aurelius
 - Seneca
+- Karl Marx
+- Buddha
 - Jiddu Krishnamurti
 - Alan Watts
 - 孙子
-- 曾国藩
+- 王阳明
 - 毛泽东
 - 南怀瑾
-- 倪海厦
+- 李小龙
