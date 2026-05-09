@@ -33,7 +33,7 @@ except ImportError as exc:
 
 
 DEFAULT_GURUTALK_API_URL = "https://api.talks.guru"
-DEFAULT_GURUTALK_WEB_URL = "https://talks.guru"
+DEFAULT_GURUTALK_WEB_URL = "https://www.talks.guru"
 USER_AGENT = "GuruTalk-GurutalkClient/1.0 (+https://github.com/gurutalk)"
 
 
@@ -139,32 +139,6 @@ def _request_json(
 	raise RuntimeError(f"Incomplete response fetching {url}: {last_error}") from last_error
 
 
-def send_magiclink(email: str) -> dict[str, Any]:
-	quoted_email = urllib.parse.quote(email, safe="")
-	url = f"{DEFAULT_GURUTALK_WEB_URL}/login/magiclink?email={quoted_email}"
-	req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT}, method="GET")
-	try:
-		with urllib.request.urlopen(req, timeout=20) as resp:
-			resp.read()
-			status = getattr(resp, "status", resp.getcode())
-	except urllib.error.HTTPError as exc:
-		err_body = ""
-		try:
-			err_body = exc.read().decode("utf-8")
-		except Exception:
-			err_body = ""
-		raise RuntimeError(f"HTTP {exc.code} requesting magic link: {err_body or exc.reason}") from exc
-	except urllib.error.URLError as exc:
-		raise RuntimeError(f"Network error requesting magic link: {exc.reason}") from exc
-
-	return {
-		"ok": True,
-		"email": email,
-		"status": status,
-		"login_url": url,
-	}
-
-
 def _write_env_value(env_path: Path, key: str, value: str) -> None:
 	if "\n" in value or "\r" in value:
 		raise RuntimeError(f"Invalid value for {key}: newlines are not allowed")
@@ -192,7 +166,7 @@ def configure_runtime(skill_dir: str | Path | None = None) -> dict[str, Any]:
 	config = load_runtime_config(skill_dir=skill_dir, require_api_key=False)
 
 	try:
-		api_key = getpass("Enter Gurutalk API Key: ").strip()
+		api_key = getpass(f"Enter Gurutalk API Key from {DEFAULT_GURUTALK_WEB_URL}: ").strip()
 	except (EOFError, KeyboardInterrupt) as exc:
 		raise RuntimeError("Cancelled API key input") from exc
 
@@ -260,9 +234,6 @@ def main() -> None:
 
 	subparsers.add_parser("configure", help="交互式写入当前技能目录的 API key")
 
-	magiclink_parser = subparsers.add_parser("magiclink", help="请求 Gurutalk magic link")
-	magiclink_parser.add_argument("--email", required=True, help="登录邮箱")
-
 	subparsers.add_parser("figures", help="获取云端人物目录")
 
 	figure_parser = subparsers.add_parser("figure", help="获取单个人物 profile")
@@ -274,16 +245,13 @@ def main() -> None:
 	query_parser.add_argument("--limit", type=int, default=None, help="返回结果数量")
 
 	quote_parser = subparsers.add_parser("quote", help="获取引用详情")
-	quote_parser.add_argument("--quote-id", required=True, help="引用 ID")
+	quote_parser.add_argument("quote_id", help="引用 ID")
 
 	args = parser.parse_args()
 
 	try:
 		if args.command == "configure":
 			_print_json(configure_runtime(skill_dir=args.skill_dir))
-			return
-		if args.command == "magiclink":
-			_print_json(send_magiclink(args.email))
 			return
 		if args.command == "figures":
 			_print_json(fetch_figures_index(skill_dir=args.skill_dir))

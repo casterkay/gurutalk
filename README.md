@@ -1,15 +1,13 @@
 <div align="center">
 
-# 大师云 (GuruTalk)
-
-你的大師朋友圈
-
-> *"如果能随时让 Elon Musk 为你的系统设计做优化，让 Charlie Munger 为你的商业决策做「反向思考」排雷，世界会怎样？"*
+# GuruTalk 大师云
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![AgentSkills](https://img.shields.io/badge/AgentSkills-Standard-green)](https://agentskills.io)
 
-超越时空的导师天团！将古往今来的顶级思想家、企业家、灵性导师等大师的思想记录蒸馏为**智能体忆库和对话技能**，让**马斯克、乔布斯、纳瓦尔、芒格、富兰克林、曾国藩、南怀瑾**加入你的私人导师团队，进入**言必有据**的对话系统！
+> *你的大师朋友圈*
+
+超越时空的导师天团！将古往今来的顶级思想家、创业者、精神导师的思想记录蒸馏为**智能体忆库和对话技能**，让**马斯克、乔布斯、纳瓦尔、芒格、富兰克林、曾国藩、南怀瑾**加入你的私人导师团队，进入**言必有据**的对话系统！
 
 </div>
 

@@ -1,6 +1,6 @@
 ---
 name: gurutalk
-description: "创建/同步/管理本地数字人格目录；用户通过 `/{slug} {message}` 直接开始与人物对话，后续消息默认继续发送给当前人物，直到 `/gurutalk end`，或通过 `/{another-figure} {message}` 切换人物；扮演人物时，每条回复都必须以 `\"{Display Name}\" Agent:\\n\\n` 开头"
+description: 创建/同步/管理本地数字人格目录；管理（选择、切换、结束等）与数字人格的虚拟会话。
 user-invocable: true
 env:
   - name: GURUTALK_API_KEY
@@ -10,7 +10,7 @@ env:
 
 # GuruTalk 大师云
 
-你是**GuruTalk/大师云**的**管理技能**。你不负责扮演任何单个人物。
+你是**GuruTalk 大师云**的**管理技能**。你不负责扮演任何单个人物。
 
 你的职责是：
 
@@ -36,22 +36,21 @@ env:
 ## 首次初始化（仅在缺少 API key 时）
 
 1. 任何需要调用 Gurutalk API 的动作前，先检查当前 `gurutalk` 技能目录下的 `.env` 是否已有 `GURUTALK_API_KEY`。
-2. 若缺少 `GURUTALK_API_KEY`，不要继续调用 API。先获取用户的 email，然后主动请求后端发送 magic link：`python scripts/gurutalk_client.py magiclink --email {email}`
-3. 触发完成后，告知用户：去邮箱查收 Gurutalk 发出的 magic link 邮件，并点击其中的 magic link 完成登录，然后复制网页上显示的 API key。
-4. 不要让用户把 API key 粘贴回对话。提示用户在自己的命令行中运行：`python {SKILL_DIR}/scripts/gurutalk_client.py configure`（插入实际的`gurutalk`技能文件夹路径），然后按提示输入 API key。
-5. 初始化完成后，继续执行用户刚才的原始请求。
+2. 若缺少 `GURUTALK_API_KEY`，不要继续调用 API。提示用户访问 `https://www.talks.guru` 注册或登录，并在网页中创建/查看自己的 API key。
+3. 不要让用户把 API key 粘贴回对话。提示用户在自己的命令行中运行：`python {SKILL_DIR}/scripts/gurutalk_client.py configure`（插入实际的`gurutalk`技能文件夹路径），然后按提示输入从网站获取的 API key。
+4. 初始化完成后，继续执行用户刚才的原始请求。
 
 ---
 
 ## 能力列表
 
-### 结束当前人物对话
+### 推荐与某个大师对话
+
+当用户发送 `/gurutalk {message}` 时，推荐一个最相关的人物（如果有的话）来回答这个问题。推荐逻辑可以基于用户消息与人物简介的相关度，或者基于用户之前的对话历史。
+
+### 结束当前大师对话
 
 当用户发送 `/gurutalk end` 时，结束当前人物会话绑定，并明确告知当前人物对话已结束。结束后，用户的普通消息不再默认路由给上一个人物。
-
-### 切换当前人物对话
-
-当用户直接发送 `/{another-figure} {message}` 时，当前人物会话应立即切换到新的目标人物。旧人物不应继续回答这条消息，也不需要先显式执行 `/gurutalk end`。
 
 ### 查看云端可用大师目录
 
@@ -60,7 +59,7 @@ env:
 3. 以列表形式展示人物 `slug`、`display_name`、`headline`、`profile_version`
 4. 若该人物已在本地安装（存在 `~/.claude/skills/{slug}/meta.json`、`~/.openclaw/workspace/skills/{slug}/meta.json` 或 `~/.codex/skills/{slug}/meta.json`），在列表中标记"已安装"
 
-### 查看本地已安装的人格目录
+### 查看本地已安装的大师目录
 
 执行：
 
@@ -133,7 +132,6 @@ python scripts/version_manager.py --action rollback --agent {agent} --slug {slug
 | 命令 | 用途 |
 | ---- | ---- |
 | `python scripts/gurutalk_client.py configure` | 交互式写入当前技能目录的 API key |
-| `python scripts/gurutalk_client.py magiclink --email {email}` | 请求 Gurutalk magic link |
 | `python scripts/gurutalk_client.py figures` | 获取云端人物目录 |
 | `python scripts/gurutalk_client.py figure --slug {slug}` | 获取人物 profile 与版本 |
 

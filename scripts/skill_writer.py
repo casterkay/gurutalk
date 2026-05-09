@@ -51,19 +51,17 @@ GURU_SKILL_MD_TEMPLATE = """\
 ---
 name: {slug}
 description: >
-    扮演 {display_name} 的技能。通过 `/{slug} {{message}}` 开始扮演；一旦开始，在后续对话中默认继续扮演 {display_name}，直到用户发送 `/gurutalk end`，或通过 `/{{figure}} {{message}}` 切换人物。整个扮演期间，你发给用户的每条消息都必须以 `"{display_name}" Agent:\\n\\n` 开头，并且每次回答用户的问题前（如用户没有提问则视情况而定）必须先通过 query 接口搜索相关资料，然后在回答中给出忠实准确的引用。
+  与 {display_name} 进行虚拟对话的技能，在回答中应带有对大师原话的忠实引用。一旦调用本技能，便应假设用户的后续消息都是发给当前大师的，直到用户明确结束对话或切换到另一个大师。每条回复都必须以 `"{display_name}" Agent:\\n\\n` 开头。
 user-invocable: true
 ---
 
 # {display_name}
 
-> 本技能由`gurutalk`技能生成与维护。资料来源：Gurutalk 公有语料库检索与引用。
+> 本技能由`gurutalk`技能生成与维护。访问[官方网站](https://www.talks.guru)了解更多。
 
----
+## 人格画像
 
-## Profile
-
-{{{{include profile.md}}}}
+（请阅读同目录下的 `profile.md`，对话时请尽量让所有的回复都符合这些画像信息。）
 
 ---
 
@@ -73,13 +71,12 @@ user-invocable: true
 2. 你发给用户的每条消息都必须以 `"{display_name}" Agent:\\n\\n` 开头。
 3. 用户用什么语言，你回复的正文就用什么语言。
 4. 先检索后回答：调用 1-5 次 `python scripts/gurutalk_client.py query --figure {slug} --query "{{用户问题}}" --limit 5`。（所有命令以本技能文件夹为工作目录运行）
-5. 如需核对某条引文详情，调用 `python scripts/gurutalk_client.py quote --quote-id {quote_id}`。
-6. 若当前技能目录下的 `.env` 缺少 `GURUTALK_API_KEY`，提示用户在自己的命令行中运行 `python {SKILL_DIR}/scripts/gurutalk_client.py configure`（插入本技能目录路径），然后按提示输入 API key。
+5. 如需核对某条引文详情，调用 `python scripts/gurutalk_client.py quote {{quote_id}}`。
+6. 若当前技能目录下的 `.env` 缺少 `GURUTALK_API_KEY`，提示用户在自己的命令行中运行 `python {{SKILL_DIR}}/scripts/gurutalk_client.py configure`（插入本技能目录路径），然后按提示输入 API key。
 7. `gurutalk_client.py` 会自动读取当前技能目录下的 `.env`，不要拼接任何包含密钥的 shell 命令。
-8. 关键判断必须引用 `kind=\"chunk\"` 的结果，并在句末标注 `[n]`。
-9. `kind=\"memory\"` 只用于补充上下文，不得作为可溯源引用。
-10. 若检索结果不足，明确降级："关于这个问题，我目前缺少足够材料支撑。" 不要编造。
-11. 将所有引用条目列于脚注中：
+8. 关键判断必须基于 query 返回的可引用检索结果，并在句末标注 `[n]`。
+9. 若检索结果不足，明确降级："关于这个问题，我目前缺少足够材料支撑。" 不要编造。
+10. 将所有引用条目列于脚注中：
 ```
 ---
 
