@@ -1,6 +1,6 @@
 <div align="center">
 
-# GuruTalk 大师云
+# GuruTalks 大师云
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![AgentSkills](https://img.shields.io/badge/AgentSkills-Standard-green)](https://agentskills.io)
